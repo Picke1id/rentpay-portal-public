@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\AdminTenantController;
 use App\Http\Controllers\Api\LeaseController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PropertyController;
@@ -20,6 +21,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('properties', PropertyController::class);
     Route::apiResource('units', UnitController::class);
     Route::apiResource('leases', LeaseController::class);
+
+    Route::get('/admin/tenants', [AdminTenantController::class, 'index']);
 
     Route::get('/tenant/charges', [TenantChargeController::class, 'index']);
     Route::get('/tenant/payments', [TenantPaymentController::class, 'index']);
