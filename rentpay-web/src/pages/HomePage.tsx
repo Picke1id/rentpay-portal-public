@@ -3,15 +3,15 @@ import { Button } from '../components/Button'
 
 export const HomePage = () => {
   return (
-    <div className="home-hero">
-      <div className="hero-copy">
-        <p className="eyebrow">RentPay Portal</p>
-        <h1>Rent payments, verified by Stripe, designed for trust.</h1>
-        <p>
+    <div className="grid min-h-screen grid-cols-1 items-center gap-12 bg-gradient-to-br from-white via-sand to-stone p-16 lg:grid-cols-2">
+      <div className="space-y-6">
+        <p className="text-xs font-bold uppercase tracking-[0.35em] text-teal">RentPay Portal</p>
+        <h1 className="font-display text-4xl leading-tight text-ink">Rent payments, verified by Stripe, designed for trust.</h1>
+        <p className="text-slate-600">
           A full‑stack MVP showcasing admin and tenant experiences, automated charges,
           and webhook‑verified payment success.
         </p>
-        <div className="hero-actions">
+        <div className="flex flex-wrap gap-4">
           <Link to="/login">
             <Button className="btn-primary">Sign in</Button>
           </Link>
@@ -20,16 +20,14 @@ export const HomePage = () => {
           </Link>
         </div>
       </div>
-      <div className="hero-panel">
-        <div className="card">
-          <h3>Today</h3>
-          <p>Stripe events confirm payments before any balance updates.</p>
-          <ul>
-            <li>Webhook‑verified payment status</li>
-            <li>Role‑based access (admin + tenant)</li>
-            <li>Laravel + React + TypeScript</li>
-          </ul>
-        </div>
+      <div className="card space-y-4 p-8">
+        <h3 className="font-display text-2xl">Today</h3>
+        <p className="text-slate-500">Stripe events confirm payments before any balance updates.</p>
+        <ul className="space-y-2 text-sm text-slate-600">
+          <li>Webhook‑verified payment status</li>
+          <li>Role‑based access (admin + tenant)</li>
+          <li>Laravel + React + TypeScript</li>
+        </ul>
       </div>
     </div>
   )

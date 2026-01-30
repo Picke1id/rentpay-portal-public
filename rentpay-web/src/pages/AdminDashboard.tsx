@@ -57,21 +57,21 @@ export const AdminDashboard = () => {
 
   return (
     <AppLayout>
-      <div className="page-header">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h2>Admin Dashboard</h2>
-          <p>Manage leases and monitor tenant occupancy.</p>
+          <h2 className="font-display text-2xl">Admin Dashboard</h2>
+          <p className="text-slate-500">Manage leases and monitor tenant occupancy.</p>
         </div>
-        <div className="badge">Operations</div>
+        <div className="rounded-full bg-teal/10 px-4 py-2 text-sm font-semibold text-teal">Operations</div>
       </div>
 
-      <section className="card">
-        <div className="section-header">
-          <h3>Create lease</h3>
-          <span>{leaseMutation.isPending ? 'Saving...' : ''}</span>
+      <section className="card p-6">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="font-display text-xl">Create lease</h3>
+          <span className="text-sm text-slate-400">{leaseMutation.isPending ? 'Saving...' : ''}</span>
         </div>
-        <form className="grid-form" onSubmit={onSubmit}>
-          <label>
+        <form className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" onSubmit={onSubmit}>
+          <label className="flex flex-col gap-2 text-sm font-semibold">
             Unit
             <select
               value={form.unit_id}
@@ -85,7 +85,7 @@ export const AdminDashboard = () => {
               ))}
             </select>
           </label>
-          <label>
+          <label className="flex flex-col gap-2 text-sm font-semibold">
             Tenant
             <select
               value={form.tenant_user_id}
@@ -99,7 +99,7 @@ export const AdminDashboard = () => {
               ))}
             </select>
           </label>
-          <label>
+          <label className="flex flex-col gap-2 text-sm font-semibold">
             Rent amount (cents)
             <input
               value={form.rent_amount}
@@ -107,7 +107,7 @@ export const AdminDashboard = () => {
               placeholder="150000"
             />
           </label>
-          <label>
+          <label className="flex flex-col gap-2 text-sm font-semibold">
             Due day
             <input
               value={form.due_day}
@@ -115,7 +115,7 @@ export const AdminDashboard = () => {
               placeholder="1"
             />
           </label>
-          <label>
+          <label className="flex flex-col gap-2 text-sm font-semibold">
             Start date
             <input
               type="date"
@@ -123,35 +123,35 @@ export const AdminDashboard = () => {
               onChange={(event) => setForm((prev) => ({ ...prev, start_date: event.target.value }))}
             />
           </label>
-          <div className="form-actions">
+          <div className="flex flex-wrap items-center gap-4">
             <Button type="submit" className="btn-primary" disabled={leaseMutation.isPending}>
               Create lease
             </Button>
-            {message ? <span className="form-message">{message}</span> : null}
+            {message ? <span className="text-sm font-semibold text-teal">{message}</span> : null}
           </div>
         </form>
       </section>
 
-      <section className="card">
-        <div className="section-header">
-          <h3>Units</h3>
-          <span>{unitsQuery.isLoading ? 'Loading...' : ''}</span>
+      <section className="card p-6">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="font-display text-xl">Units</h3>
+          <span className="text-sm text-slate-400">{unitsQuery.isLoading ? 'Loading...' : ''}</span>
         </div>
-        <div className="table">
-          <div className="table-row header">
+        <div className="grid gap-3">
+          <div className="grid grid-cols-3 gap-3 border-b border-stone pb-2 text-xs uppercase tracking-[0.2em] text-slate-400">
             <span>Unit</span>
             <span>Property</span>
             <span>Notes</span>
           </div>
           {(unitsQuery.data ?? []).map((unit) => (
-            <div className="table-row" key={unit.id}>
+            <div className="grid grid-cols-3 items-center gap-3 border-b border-stone py-2" key={unit.id}>
               <span>{unit.name}</span>
               <span>{unit.property?.name ?? '—'}</span>
               <span>{unit.notes ?? '—'}</span>
             </div>
           ))}
           {unitsQuery.data?.length === 0 && !unitsQuery.isLoading ? (
-            <div className="empty">No units yet. Create a property and unit first.</div>
+            <div className="rounded-xl bg-stone/40 p-4 text-sm text-slate-500">No units yet. Create a property and unit first.</div>
           ) : null}
         </div>
       </section>

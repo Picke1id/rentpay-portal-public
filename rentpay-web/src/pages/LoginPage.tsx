@@ -38,14 +38,14 @@ export const LoginPage = () => {
   }
 
   return (
-    <div className="auth-page">
-      <div className="auth-card">
+    <div className="grid min-h-screen grid-cols-1 gap-10 bg-gradient-to-br from-white via-sand to-stone p-10 lg:grid-cols-2">
+      <div className="card flex flex-col gap-6 p-10">
         <div>
-          <h1>Welcome back</h1>
-          <p>Sign in to manage rent payments and leases.</p>
+          <h1 className="font-display text-3xl">Welcome back</h1>
+          <p className="text-slate-500">Sign in to manage rent payments and leases.</p>
         </div>
-        <form onSubmit={onSubmit} className="auth-form">
-          <label>
+        <form onSubmit={onSubmit} className="flex flex-col gap-4">
+          <label className="flex flex-col gap-2 text-sm font-semibold">
             Email
             <input
               type="email"
@@ -55,7 +55,7 @@ export const LoginPage = () => {
               required
             />
           </label>
-          <label>
+          <label className="flex flex-col gap-2 text-sm font-semibold">
             Password
             <input
               type="password"
@@ -65,24 +65,24 @@ export const LoginPage = () => {
               required
             />
           </label>
-          {error ? <div className="alert">{error}</div> : null}
+          {error ? <div className="rounded-xl bg-orange-100 px-3 py-2 text-sm font-semibold text-orange-800">{error}</div> : null}
           <Button type="submit" disabled={loading}>
             {loading ? 'Signing in...' : 'Sign in'}
           </Button>
         </form>
-        <div className="demo-hints">
+        <div className="text-xs text-slate-500">
           <p>Demo admin: admin@rentpay.test / password</p>
           <p>Demo tenant: tenant@rentpay.test / password</p>
         </div>
       </div>
-      <div className="auth-side">
-        <div className="glass">
-          <h2>RentPay Portal</h2>
-          <p>Track rent charges, manage leases, and confirm payments via Stripe webhooks.</p>
-          <div className="pill-row">
-            <span>Laravel</span>
-            <span>React</span>
-            <span>Stripe</span>
+      <div className="flex items-center justify-center">
+        <div className="card max-w-md space-y-4 border border-white/60 bg-white/60 p-8">
+          <h2 className="font-display text-2xl">RentPay Portal</h2>
+          <p className="text-slate-500">Track rent charges, manage leases, and confirm payments via Stripe webhooks.</p>
+          <div className="flex flex-wrap gap-2 text-xs font-semibold">
+            {['Laravel', 'React', 'Stripe'].map((item) => (
+              <span key={item} className="rounded-full bg-teal/10 px-3 py-1 text-teal">{item}</span>
+            ))}
           </div>
         </div>
       </div>
