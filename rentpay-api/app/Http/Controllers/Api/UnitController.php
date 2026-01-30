@@ -22,6 +22,7 @@ class UnitController extends Controller
     {
         $units = Unit::query()
             ->whereHas('property', fn ($q) => $q->where('user_id', auth()->id()))
+            ->with('property')
             ->latest()
             ->get();
 

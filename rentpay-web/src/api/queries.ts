@@ -1,5 +1,5 @@
 import { api } from './client'
-import type { Charge, Payment, Unit, TenantUser } from './types'
+import type { Charge, Payment, Unit, TenantUser, Property } from './types'
 
 export const fetchTenantCharges = async () => {
   const { data } = await api.get<{ data: Charge[] }>('/api/tenant/charges')
@@ -16,9 +16,29 @@ export const fetchUnits = async () => {
   return data.data
 }
 
+export const fetchProperties = async () => {
+  const { data } = await api.get<{ data: Property[] }>('/api/properties')
+  return data.data
+}
+
 export const fetchTenants = async () => {
   const { data } = await api.get<{ data: TenantUser[] }>('/api/admin/tenants')
   return data.data
+}
+
+export const createProperty = async (payload: { name: string; address_line1?: string; city?: string; state?: string; postal_code?: string }) => {
+  const { data } = await api.post('/api/properties', payload)
+  return data
+}
+
+export const createUnit = async (payload: { property_id: number; name: string; notes?: string }) => {
+  const { data } = await api.post('/api/units', payload)
+  return data
+}
+
+export const deleteUnit = async (unitId: number) => {
+  const { data } = await api.delete(`/api/units/${unitId}`)
+  return data
 }
 
 export const createLease = async (payload: {
@@ -35,4 +55,13 @@ export const createLease = async (payload: {
 export const createCheckout = async (chargeId: number) => {
   const { data } = await api.post<{ url: string }>('/api/payments/checkout', { charge_id: chargeId })
   return data.url
+}
+
+export const importCsv = async (endpoint: 'units' | 'leases' | 'charges', file: File) => {
+  const form = new FormData()
+  form.append('file', file)
+  const { data } = await api.post(`/api/admin/import/${endpoint}`, form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+  return data
 }

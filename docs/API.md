@@ -71,6 +71,28 @@ Create lease (auto-creates a due charge):
 
 Returns tenant list (id, name, email).
 
+### CSV Imports (Admin)
+- POST `/api/admin/import/units`
+- POST `/api/admin/import/leases`
+- POST `/api/admin/import/charges`
+
+Multipart form field: `file` (CSV).
+
+Units CSV headers:
+```
+property_id,name,notes
+```
+
+Leases CSV headers:
+```
+unit_id,tenant_user_id,rent_amount,due_day,start_date,end_date
+```
+
+Charges CSV headers:
+```
+lease_id,amount,due_date,status
+```
+
 ## Tenant (role=tenant)
 
 ### GET /api/tenant/charges
