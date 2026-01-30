@@ -24,12 +24,15 @@ export const TenantDashboard = () => {
 
   return (
     <AppLayout>
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <h2 className="font-display text-2xl">Tenant Dashboard</h2>
-          <p className="text-slate-500">Review your balance and pay upcoming charges.</p>
+      <div id="dashboard" className="flex flex-col gap-1">
+        <div className="text-xs uppercase tracking-[0.2em] text-slate-400">Tenant / Dashboard</div>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 className="font-display text-3xl">Dashboard</h2>
+            <p className="text-slate-500">Review balances and pay upcoming charges.</p>
+          </div>
+          <div className="rounded-full bg-teal/10 px-4 py-2 text-sm font-semibold text-teal">Stripe verified</div>
         </div>
-        <div className="rounded-full bg-teal/10 px-4 py-2 text-sm font-semibold text-teal">Stripe verified</div>
       </div>
 
       <div className="grid gap-5 md:grid-cols-3">
@@ -38,7 +41,7 @@ export const TenantDashboard = () => {
         <StatCard label="Payments" value={`${paymentsQuery.data?.length ?? 0}`} hint="All time" />
       </div>
 
-      <section className="card p-6">
+      <section id="charges" className="card p-6">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="font-display text-xl">Open charges</h3>
           <span className="text-sm text-slate-400">{chargesQuery.isLoading ? 'Loading...' : ''}</span>
@@ -51,10 +54,10 @@ export const TenantDashboard = () => {
             <span />
           </div>
           {(chargesQuery.data ?? []).map((charge) => (
-            <div className="grid grid-cols-4 items-center gap-3 border-b border-stone py-2" key={charge.id}>
+            <div className="grid grid-cols-4 items-center gap-3 border-b border-stone py-2 text-sm text-slate-700" key={charge.id}>
               <span>{charge.due_date}</span>
               <span>{formatMoney(charge.amount)}</span>
-              <span className="text-sm font-semibold capitalize text-orange-600">{charge.status}</span>
+              <span className="font-semibold capitalize text-orange-600">{charge.status}</span>
               <Button
                 className="btn-primary"
                 onClick={() => checkoutMutation.mutate(charge.id)}
@@ -70,7 +73,7 @@ export const TenantDashboard = () => {
         </div>
       </section>
 
-      <section className="card p-6">
+      <section id="payments" className="card p-6">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="font-display text-xl">Payment history</h3>
         </div>
@@ -81,10 +84,10 @@ export const TenantDashboard = () => {
             <span>Status</span>
           </div>
           {(paymentsQuery.data ?? []).map((payment) => (
-            <div className="grid grid-cols-3 items-center gap-3 border-b border-stone py-2" key={payment.id}>
+            <div className="grid grid-cols-3 items-center gap-3 border-b border-stone py-2 text-sm text-slate-700" key={payment.id}>
               <span>{payment.paid_at ?? payment.created_at ?? '—'}</span>
               <span>{formatMoney(payment.amount)}</span>
-              <span className={`text-sm font-semibold capitalize ${payment.status === 'succeeded' ? 'text-emerald-600' : payment.status === 'failed' ? 'text-red-600' : 'text-slate-500'}`}>{payment.status}</span>
+              <span className={`font-semibold capitalize ${payment.status === 'succeeded' ? 'text-emerald-600' : payment.status === 'failed' ? 'text-red-600' : 'text-slate-500'}`}>{payment.status}</span>
             </div>
           ))}
           {paymentsQuery.data?.length === 0 && !paymentsQuery.isLoading ? (

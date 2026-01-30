@@ -21,6 +21,7 @@ class LeaseController extends Controller
     {
         $leases = Lease::query()
             ->whereHas('unit.property', fn ($q) => $q->where('user_id', auth()->id()))
+            ->with(['unit.property', 'tenant'])
             ->latest()
             ->get();
 

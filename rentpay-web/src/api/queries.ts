@@ -1,5 +1,5 @@
 import { api } from './client'
-import type { Charge, Payment, Unit, TenantUser, Property } from './types'
+import type { Charge, Payment, Unit, TenantUser, Property, Lease, AdminCharge } from './types'
 
 export const fetchTenantCharges = async () => {
   const { data } = await api.get<{ data: Charge[] }>('/api/tenant/charges')
@@ -23,6 +23,16 @@ export const fetchProperties = async () => {
 
 export const fetchTenants = async () => {
   const { data } = await api.get<{ data: TenantUser[] }>('/api/admin/tenants')
+  return data.data
+}
+
+export const fetchLeases = async () => {
+  const { data } = await api.get<{ data: Lease[] }>('/api/leases')
+  return data.data
+}
+
+export const fetchAdminCharges = async () => {
+  const { data } = await api.get<{ data: AdminCharge[] }>('/api/admin/charges')
   return data.data
 }
 

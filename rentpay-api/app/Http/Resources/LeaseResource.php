@@ -20,6 +20,11 @@ class LeaseResource extends JsonResource
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             'unit' => new UnitResource($this->whenLoaded('unit')),
+            'tenant' => $this->whenLoaded('tenant', fn () => [
+                'id' => $this->tenant?->id,
+                'name' => $this->tenant?->name,
+                'email' => $this->tenant?->email,
+            ]),
         ];
     }
 }

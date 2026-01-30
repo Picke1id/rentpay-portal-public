@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AdminTenantController;
 use App\Http\Controllers\Api\AdminImportController;
+use App\Http\Controllers\Api\AdminChargeController;
 use App\Http\Controllers\Api\LeaseController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PropertyController;
@@ -24,6 +25,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('leases', LeaseController::class);
 
     Route::get('/admin/tenants', [AdminTenantController::class, 'index']);
+    Route::get('/admin/charges', [AdminChargeController::class, 'index']);
     Route::post('/admin/import/units', [AdminImportController::class, 'importUnits']);
     Route::post('/admin/import/leases', [AdminImportController::class, 'importLeases']);
     Route::post('/admin/import/charges', [AdminImportController::class, 'importCharges']);
