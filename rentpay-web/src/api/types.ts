@@ -23,6 +23,8 @@ export type Lease = {
   due_day: number
   start_date: string
   end_date?: string | null
+  unit?: Unit
+  tenant?: { id: number; name: string; email: string }
 }
 
 export type Charge = {
@@ -42,6 +44,17 @@ export type Payment = {
   amount: number
   paid_at?: string | null
   created_at?: string
+}
+
+export type AdminCharge = {
+  id: number
+  lease_id: number
+  amount: number
+  due_date: string
+  status: 'due' | 'paid' | 'void'
+  unit?: string | null
+  property?: string | null
+  tenant?: string | null
 }
 
 export type TenantUser = {

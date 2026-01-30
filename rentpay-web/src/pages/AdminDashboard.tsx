@@ -1,48 +1,81 @@
 import { useMemo, useState } from 'react'
 import { z } from 'zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { createLease, createProperty, createUnit, deleteUnit, fetchProperties, fetchTenants, fetchUnits, importCsv } from '../api/queries'
+import {
+  createLease,
+  createProperty,
+  createUnit,
+  deleteUnit,
+  fetchAdminCharges,
+  fetchLeases,
+  fetchProperties,
+  fetchTenants,
+  fetchUnits,
+  importCsv,
+} from '../api/queries'
 import { AppLayout } from '../components/AppLayout'
 import { Button } from '../components/Button'
 
-const schema = z.object({
+const leaseSchema = z.object({
   unit_id: z.coerce.number().min(1),
   tenant_user_id: z.coerce.number().min(1),
-  rent_amount: z.coerce.number().min(1000),
+  rent_amount: z.coerce.number().min(1),
   due_day: z.coerce.number().min(1).max(28),
   start_date: z.string().min(10),
 })
+
+const currency = (amount: number) => `$${(amount / 100).toFixed(2)}`
+
+const downloadTemplate = (tab: 'units' | 'leases' | 'charges') => {
+  const headers: Record<typeof tab, string> = {
+    units: 'property_id,name,notes\n',
+    leases: 'unit_id,tenant_user_id,rent_amount,due_day,start_date,end_date\n',
+    charges: 'lease_id,amount,due_date,status\n',
+  }
+
+  const blob = new Blob([headers[tab]], { type: 'text/csv;charset=utf-8;' })
+  const link = document.createElement('a')
+  link.href = URL.createObjectURL(blob)
+  link.setAttribute('download', `rentpay_${tab}_template.csv`)
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+}
 
 export const AdminDashboard = () => {
   const queryClient = useQueryClient()
   const unitsQuery = useQuery({ queryKey: ['admin', 'units'], queryFn: fetchUnits })
   const tenantsQuery = useQuery({ queryKey: ['admin', 'tenants'], queryFn: fetchTenants })
   const propertiesQuery = useQuery({ queryKey: ['admin', 'properties'], queryFn: fetchProperties })
+  const leasesQuery = useQuery({ queryKey: ['admin', 'leases'], queryFn: fetchLeases })
+  const chargesQuery = useQuery({ queryKey: ['admin', 'charges'], queryFn: fetchAdminCharges })
 
   const [propertyForm, setPropertyForm] = useState({ name: '' })
-  const [form, setForm] = useState({
+  const [unitForm, setUnitForm] = useState({ property_id: '', name: '', notes: '' })
+  const [leaseForm, setLeaseForm] = useState({
     unit_id: '',
     tenant_user_id: '',
-    rent_amount: '150000',
+    rent_amount: '1500.00',
     due_day: '1',
     start_date: new Date().toISOString().slice(0, 10),
   })
-  const [unitForm, setUnitForm] = useState({ property_id: '', name: '', notes: '' })
-  const [message, setMessage] = useState<string | null>(null)
+  const [leaseMessage, setLeaseMessage] = useState<string | null>(null)
+
   const [importTab, setImportTab] = useState<'units' | 'leases' | 'charges'>('units')
   const [importFile, setImportFile] = useState<File | null>(null)
   const [importMessage, setImportMessage] = useState<string | null>(null)
 
-  const leaseMutation = useMutation({
-    mutationFn: createLease,
-    onSuccess: () => {
-      setMessage('Lease created and initial charge generated.')
-      queryClient.invalidateQueries({ queryKey: ['admin', 'units'] })
-    },
-    onError: (error: any) => {
-      setMessage(error?.response?.data?.message || 'Failed to create lease.')
-    },
-  })
+  const [unitSearch, setUnitSearch] = useState('')
+  const [unitPropertyFilter, setUnitPropertyFilter] = useState('all')
+
+  const filteredUnits = useMemo(() => {
+    const units = unitsQuery.data ?? []
+    return units.filter((unit) => {
+      const matchesSearch = unit.name.toLowerCase().includes(unitSearch.toLowerCase())
+      const matchesProperty = unitPropertyFilter === 'all' || String(unit.property_id) === unitPropertyFilter
+      return matchesSearch && matchesProperty
+    })
+  }, [unitsQuery.data, unitSearch, unitPropertyFilter])
 
   const propertyMutation = useMutation({
     mutationFn: createProperty,
@@ -67,11 +100,24 @@ export const AdminDashboard = () => {
     },
   })
 
+  const leaseMutation = useMutation({
+    mutationFn: createLease,
+    onSuccess: () => {
+      setLeaseMessage('Lease created and initial charge generated.')
+      queryClient.invalidateQueries({ queryKey: ['admin', 'leases'] })
+    },
+    onError: (error: any) => {
+      setLeaseMessage(error?.response?.data?.message || 'Failed to create lease.')
+    },
+  })
+
   const importMutation = useMutation({
     mutationFn: () => importCsv(importTab, importFile as File),
     onSuccess: (data) => {
       setImportMessage(`Imported ${data.imported} rows.`)
       queryClient.invalidateQueries({ queryKey: ['admin', 'units'] })
+      queryClient.invalidateQueries({ queryKey: ['admin', 'leases'] })
+      queryClient.invalidateQueries({ queryKey: ['admin', 'charges'] })
     },
     onError: (error: any) => {
       const detail = error?.response?.data?.errors?.[0]?.errors?.[0]
@@ -79,238 +125,301 @@ export const AdminDashboard = () => {
     },
   })
 
-  const canImport = useMemo(() => importFile && importTab, [importFile, importTab])
+  const dueDayOptions = Array.from({ length: 28 }, (_, i) => String(i + 1))
 
-  const onSubmit = (event: React.FormEvent) => {
+  const submitLease = (event: React.FormEvent) => {
     event.preventDefault()
-    setMessage(null)
+    setLeaseMessage(null)
 
-    const parsed = schema.safeParse(form)
+    const parsed = leaseSchema.safeParse({
+      ...leaseForm,
+      rent_amount: Number(parseFloat(leaseForm.rent_amount) * 100),
+    })
+
     if (!parsed.success) {
-      setMessage('Please complete all fields with valid values.')
+      setLeaseMessage('Please complete all fields with valid values.')
       return
     }
 
     leaseMutation.mutate({
-      unit_id: Number(form.unit_id),
-      tenant_user_id: Number(form.tenant_user_id),
-      rent_amount: Number(form.rent_amount),
-      due_day: Number(form.due_day),
-      start_date: form.start_date,
+      unit_id: Number(leaseForm.unit_id),
+      tenant_user_id: Number(leaseForm.tenant_user_id),
+      rent_amount: Number(parseFloat(leaseForm.rent_amount) * 100),
+      due_day: Number(leaseForm.due_day),
+      start_date: leaseForm.start_date,
     })
   }
 
   return (
     <AppLayout>
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <h2 className="font-display text-2xl">Admin Dashboard</h2>
-          <p className="text-slate-500">Manage leases and monitor tenant occupancy.</p>
+      <div id="dashboard" className="flex flex-col gap-1">
+        <div className="text-xs uppercase tracking-[0.2em] text-slate-400">Admin / Dashboard</div>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 className="font-display text-3xl">Dashboard</h2>
+            <p className="text-slate-500">Manage properties, units, leases, and imports.</p>
+          </div>
+          <Button className="btn-primary">Create</Button>
         </div>
-        <div className="rounded-full bg-teal/10 px-4 py-2 text-sm font-semibold text-teal">Operations</div>
       </div>
 
-      <section className="card p-6">
-        <div className="mb-6 grid gap-4 md:grid-cols-2">
-          <div>
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="flex flex-col gap-6">
+          <section id="units" className="card p-6">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <h3 className="font-display text-xl">Units</h3>
+              <div className="flex flex-wrap items-center gap-3">
+                <input
+                  className="w-48"
+                  placeholder="Search units"
+                  value={unitSearch}
+                  onChange={(event) => setUnitSearch(event.target.value)}
+                />
+                <select
+                  className="w-44"
+                  value={unitPropertyFilter}
+                  onChange={(event) => setUnitPropertyFilter(event.target.value)}
+                >
+                  <option value="all">All properties</option>
+                  {(propertiesQuery.data ?? []).map((property) => (
+                    <option key={property.id} value={property.id}>{property.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="mt-4 grid gap-2 text-xs uppercase tracking-[0.2em] text-slate-400">
+              <div className="grid grid-cols-[1.2fr_1.2fr_1.4fr_80px] gap-3">
+                <span>Unit</span>
+                <span>Property</span>
+                <span>Notes</span>
+                <span className="text-right">Actions</span>
+              </div>
+              {filteredUnits.map((unit) => (
+                <div key={unit.id} className="grid grid-cols-[1.2fr_1.2fr_1.4fr_80px] items-center gap-3 border-b border-stone py-2 text-sm normal-case text-slate-700">
+                  <span>{unit.name}</span>
+                  <span>{unit.property?.name ?? '—'}</span>
+                  <span>{unit.notes ?? '—'}</span>
+                  <div className="text-right">
+                    <button
+                      className="text-xs text-slate-400 hover:text-red-500"
+                      onClick={() => {
+                        if (confirm('Remove this unit?')) {
+                          deleteUnitMutation.mutate(unit.id)
+                        }
+                      }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              ))}
+              {filteredUnits.length === 0 ? (
+                <div className="rounded-xl bg-stone/40 p-4 text-sm normal-case text-slate-500">No units yet. Add one →</div>
+              ) : null}
+            </div>
+          </section>
+
+          <section id="leases" className="card p-6">
+            <div className="flex items-center justify-between">
+              <h3 className="font-display text-xl">Leases</h3>
+              <span className="text-sm text-slate-400">{leasesQuery.data?.length ?? 0} total</span>
+            </div>
+            <div className="mt-4 grid gap-2 text-xs uppercase tracking-[0.2em] text-slate-400">
+              <div className="grid grid-cols-4 gap-3">
+                <span>Unit</span>
+                <span>Tenant</span>
+                <span>Rent</span>
+                <span>Start</span>
+              </div>
+              {(leasesQuery.data ?? []).map((lease) => (
+                <div key={lease.id} className="grid grid-cols-4 gap-3 border-b border-stone py-2 text-sm normal-case text-slate-700">
+                  <span>{lease.unit?.name ?? lease.unit_id}</span>
+                  <span>{lease.tenant?.name ?? lease.tenant_user_id}</span>
+                  <span>{currency(lease.rent_amount)}</span>
+                  <span>{lease.start_date}</span>
+                </div>
+              ))}
+              {leasesQuery.data?.length === 0 ? (
+                <div className="rounded-xl bg-stone/40 p-4 text-sm normal-case text-slate-500">No leases yet.</div>
+              ) : null}
+            </div>
+          </section>
+
+          <section id="charges" className="card p-6">
+            <div className="flex items-center justify-between">
+              <h3 className="font-display text-xl">Charges</h3>
+              <span className="text-sm text-slate-400">{chargesQuery.data?.length ?? 0} total</span>
+            </div>
+            <div className="mt-4 grid gap-2 text-xs uppercase tracking-[0.2em] text-slate-400">
+              <div className="grid grid-cols-4 gap-3">
+                <span>Unit</span>
+                <span>Tenant</span>
+                <span>Amount</span>
+                <span>Status</span>
+              </div>
+              {(chargesQuery.data ?? []).map((charge) => (
+                <div key={charge.id} className="grid grid-cols-4 gap-3 border-b border-stone py-2 text-sm normal-case text-slate-700">
+                  <span>{charge.unit ?? '—'}</span>
+                  <span>{charge.tenant ?? '—'}</span>
+                  <span>{currency(charge.amount)}</span>
+                  <span className="capitalize">{charge.status}</span>
+                </div>
+              ))}
+              {chargesQuery.data?.length === 0 ? (
+                <div className="rounded-xl bg-stone/40 p-4 text-sm normal-case text-slate-500">No charges yet.</div>
+              ) : null}
+            </div>
+          </section>
+        </div>
+
+        <div className="flex flex-col gap-6">
+          <section id="properties" className="card p-6">
             <h3 className="font-display text-xl">Create property</h3>
-            <p className="text-sm text-slate-500">Add a property before assigning units.</p>
-          </div>
-          <form
-            onSubmit={(event) => {
-              event.preventDefault()
-              if (!propertyForm.name) return
-              propertyMutation.mutate({ name: propertyForm.name })
-            }}
-            className="flex flex-wrap gap-3"
-          >
-            <input
-              placeholder="Property name"
-              value={propertyForm.name}
-              onChange={(event) => setPropertyForm({ name: event.target.value })}
-            />
-            <Button type="submit" className="btn-primary" disabled={propertyMutation.isPending}>
-              Add property
-            </Button>
-          </form>
-        </div>
-
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="font-display text-xl">Create lease</h3>
-          <span className="text-sm text-slate-400">{leaseMutation.isPending ? 'Saving...' : ''}</span>
-        </div>
-        <form className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" onSubmit={onSubmit}>
-          <label className="flex flex-col gap-2 text-sm font-semibold">
-            Unit
-            <select
-              value={form.unit_id}
-              onChange={(event) => setForm((prev) => ({ ...prev, unit_id: event.target.value }))}
+            <form
+              className="mt-4 flex gap-3"
+              onSubmit={(event) => {
+                event.preventDefault()
+                if (!propertyForm.name) return
+                propertyMutation.mutate({ name: propertyForm.name })
+              }}
             >
-              <option value="">Select unit</option>
-              {(unitsQuery.data ?? []).map((unit) => (
-                <option key={unit.id} value={unit.id}>
-                  {unit.name} {unit.property?.name ? `• ${unit.property.name}` : ''}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex flex-col gap-2 text-sm font-semibold">
-            Tenant
-            <select
-              value={form.tenant_user_id}
-              onChange={(event) => setForm((prev) => ({ ...prev, tenant_user_id: event.target.value }))}
-            >
-              <option value="">Select tenant</option>
-              {(tenantsQuery.data ?? []).map((tenant) => (
-                <option key={tenant.id} value={tenant.id}>
-                  {tenant.name} • {tenant.email}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex flex-col gap-2 text-sm font-semibold">
-            Rent amount (cents)
-            <input
-              value={form.rent_amount}
-              onChange={(event) => setForm((prev) => ({ ...prev, rent_amount: event.target.value }))}
-              placeholder="150000"
-            />
-          </label>
-          <label className="flex flex-col gap-2 text-sm font-semibold">
-            Due day
-            <input
-              value={form.due_day}
-              onChange={(event) => setForm((prev) => ({ ...prev, due_day: event.target.value }))}
-              placeholder="1"
-            />
-          </label>
-          <label className="flex flex-col gap-2 text-sm font-semibold">
-            Start date
-            <input
-              type="date"
-              value={form.start_date}
-              onChange={(event) => setForm((prev) => ({ ...prev, start_date: event.target.value }))}
-            />
-          </label>
-          <div className="flex flex-wrap items-center gap-4">
-            <Button type="submit" className="btn-primary" disabled={leaseMutation.isPending}>
-              Create lease
-            </Button>
-            {message ? <span className="text-sm font-semibold text-teal">{message}</span> : null}
-          </div>
-        </form>
-      </section>
+              <input
+                placeholder="Property name"
+                value={propertyForm.name}
+                onChange={(event) => setPropertyForm({ name: event.target.value })}
+              />
+              <Button type="submit" className="btn-primary" disabled={propertyMutation.isPending}>
+                Add
+              </Button>
+            </form>
+          </section>
 
-      <section className="card p-6">
-        <div className="mb-6 grid gap-4 md:grid-cols-2">
-          <div>
+          <section className="card p-6">
             <h3 className="font-display text-xl">Add unit</h3>
-            <p className="text-sm text-slate-500">Create a unit under an existing property.</p>
-          </div>
-          <form
-            onSubmit={(event) => {
-              event.preventDefault()
-              if (!unitForm.property_id || !unitForm.name) return
-              unitMutation.mutate({
-                property_id: Number(unitForm.property_id),
-                name: unitForm.name,
-                notes: unitForm.notes || undefined,
-              })
-            }}
-            className="grid gap-3 md:grid-cols-3"
-          >
-            <select
-              value={unitForm.property_id}
-              onChange={(event) => setUnitForm((prev) => ({ ...prev, property_id: event.target.value }))}
+            <form
+              className="mt-4 grid gap-3"
+              onSubmit={(event) => {
+                event.preventDefault()
+                if (!unitForm.property_id || !unitForm.name) return
+                unitMutation.mutate({
+                  property_id: Number(unitForm.property_id),
+                  name: unitForm.name,
+                  notes: unitForm.notes || undefined,
+                })
+              }}
             >
-              <option value="">Property</option>
-              {(propertiesQuery.data ?? []).map((property) => (
-                <option key={property.id} value={property.id}>{property.name}</option>
-              ))}
-            </select>
-            <input
-              placeholder="Unit name"
-              value={unitForm.name}
-              onChange={(event) => setUnitForm((prev) => ({ ...prev, name: event.target.value }))}
-            />
-            <input
-              placeholder="Notes"
-              value={unitForm.notes}
-              onChange={(event) => setUnitForm((prev) => ({ ...prev, notes: event.target.value }))}
-            />
-            <div className="md:col-span-3">
+              <select
+                value={unitForm.property_id}
+                onChange={(event) => setUnitForm((prev) => ({ ...prev, property_id: event.target.value }))}
+              >
+                <option value="">Property</option>
+                {(propertiesQuery.data ?? []).map((property) => (
+                  <option key={property.id} value={property.id}>{property.name}</option>
+                ))}
+              </select>
+              <input
+                placeholder="Unit name"
+                value={unitForm.name}
+                onChange={(event) => setUnitForm((prev) => ({ ...prev, name: event.target.value }))}
+              />
+              <input
+                placeholder="Notes"
+                value={unitForm.notes}
+                onChange={(event) => setUnitForm((prev) => ({ ...prev, notes: event.target.value }))}
+              />
               <Button type="submit" className="btn-primary" disabled={unitMutation.isPending}>
                 Add unit
               </Button>
-            </div>
-          </form>
-        </div>
+            </form>
+          </section>
 
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="font-display text-xl">Units</h3>
-          <span className="text-sm text-slate-400">{unitsQuery.isLoading ? 'Loading...' : ''}</span>
-        </div>
-        <div className="grid gap-3">
-          <div className="grid grid-cols-4 gap-3 border-b border-stone pb-2 text-xs uppercase tracking-[0.2em] text-slate-400">
-            <span>Unit</span>
-            <span>Property</span>
-            <span>Notes</span>
-            <span />
-          </div>
-          {(unitsQuery.data ?? []).map((unit) => (
-            <div className="grid grid-cols-4 items-center gap-3 border-b border-stone py-2" key={unit.id}>
-              <span>{unit.name}</span>
-              <span>{unit.property?.name ?? '—'}</span>
-              <span>{unit.notes ?? '—'}</span>
-              <Button className="btn-ghost text-xs" onClick={() => deleteUnitMutation.mutate(unit.id)}>
-                Remove
+          <section className="card p-6">
+            <h3 className="font-display text-xl">Create lease</h3>
+            <form className="mt-4 grid gap-3" onSubmit={submitLease}>
+              <select
+                value={leaseForm.unit_id}
+                onChange={(event) => setLeaseForm((prev) => ({ ...prev, unit_id: event.target.value }))}
+              >
+                <option value="">Unit</option>
+                {(unitsQuery.data ?? []).map((unit) => (
+                  <option key={unit.id} value={unit.id}>
+                    {unit.name} {unit.property?.name ? `• ${unit.property.name}` : ''}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={leaseForm.tenant_user_id}
+                onChange={(event) => setLeaseForm((prev) => ({ ...prev, tenant_user_id: event.target.value }))}
+              >
+                <option value="">Tenant</option>
+                {(tenantsQuery.data ?? []).map((tenant) => (
+                  <option key={tenant.id} value={tenant.id}>{tenant.name}</option>
+                ))}
+              </select>
+              <div>
+                <label className="text-xs text-slate-500">Rent amount ($)</label>
+                <input
+                  value={leaseForm.rent_amount}
+                  onChange={(event) => setLeaseForm((prev) => ({ ...prev, rent_amount: event.target.value }))}
+                />
+                <p className="text-xs text-slate-400">Stored in cents internally.</p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <select
+                  value={leaseForm.due_day}
+                  onChange={(event) => setLeaseForm((prev) => ({ ...prev, due_day: event.target.value }))}
+                >
+                  {dueDayOptions.map((day) => (
+                    <option key={day} value={day}>{day}</option>
+                  ))}
+                </select>
+                <input
+                  type="date"
+                  value={leaseForm.start_date}
+                  onChange={(event) => setLeaseForm((prev) => ({ ...prev, start_date: event.target.value }))}
+                />
+              </div>
+              <Button type="submit" className="btn-primary" disabled={leaseMutation.isPending}>
+                {leaseMutation.isPending ? 'Creating...' : 'Create lease'}
               </Button>
-            </div>
-          ))}
-          {unitsQuery.data?.length === 0 && !unitsQuery.isLoading ? (
-            <div className="rounded-xl bg-stone/40 p-4 text-sm text-slate-500">No units yet. Create a property and unit first.</div>
-          ) : null}
-        </div>
-      </section>
+              {leaseMessage ? <p className="text-sm text-teal">{leaseMessage}</p> : null}
+            </form>
+          </section>
 
-      <section className="card p-6">
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="font-display text-xl">CSV imports</h3>
-          <span className="text-sm text-slate-400">Units, leases, charges</span>
+          <section id="imports" className="card p-6">
+            <h3 className="font-display text-xl">CSV import</h3>
+            <div className="mt-4 flex gap-2">
+              {(['units', 'leases', 'charges'] as const).map((tab) => (
+                <button
+                  key={tab}
+                  type="button"
+                  onClick={() => setImportTab(tab)}
+                  className={`btn text-xs ${importTab === tab ? 'btn-primary' : 'btn-ghost'}`}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
+            <div className="mt-4 grid gap-3">
+              <Button className="btn-ghost" onClick={() => downloadTemplate(importTab)}>
+                Download template
+              </Button>
+              <label className="flex flex-col gap-2 rounded-xl border border-dashed border-stone bg-white p-4 text-sm text-slate-500">
+                Drag & drop CSV here, or browse
+                <input type="file" accept=".csv" onChange={(event) => setImportFile(event.target.files?.[0] ?? null)} />
+              </label>
+              <Button
+                className="btn-primary"
+                disabled={!importFile || importMutation.isPending}
+                onClick={() => importMutation.mutate()}
+              >
+                {importMutation.isPending ? 'Validating...' : 'Import CSV'}
+              </Button>
+              {importMessage ? <p className="text-sm text-teal">{importMessage}</p> : null}
+            </div>
+          </section>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {(['units', 'leases', 'charges'] as const).map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              onClick={() => setImportTab(tab)}
-              className={`btn ${importTab === tab ? 'btn-primary' : 'btn-ghost'}`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
-        <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto] md:items-center">
-          <input
-            type="file"
-            accept=".csv"
-            onChange={(event) => setImportFile(event.target.files?.[0] ?? null)}
-          />
-          <Button
-            className="btn-primary"
-            disabled={!canImport || importMutation.isPending}
-            onClick={() => importMutation.mutate()}
-          >
-            {importMutation.isPending ? 'Importing...' : 'Import CSV'}
-          </Button>
-        </div>
-        {importMessage ? <p className="mt-3 text-sm text-teal">{importMessage}</p> : null}
-        <div className="mt-4 text-xs text-slate-500">
-          <p>Units headers: property_id,name,notes</p>
-          <p>Leases headers: unit_id,tenant_user_id,rent_amount,due_day,start_date,end_date</p>
-          <p>Charges headers: lease_id,amount,due_date,status</p>
-        </div>
-      </section>
+      </div>
     </AppLayout>
   )
 }
