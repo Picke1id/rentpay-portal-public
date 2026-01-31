@@ -26,6 +26,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/admin/tenants', [AdminTenantController::class, 'index']);
     Route::get('/admin/charges', [AdminChargeController::class, 'index']);
+    Route::post('/admin/charges', [AdminChargeController::class, 'store']);
     Route::post('/admin/import/units', [AdminImportController::class, 'importUnits']);
     Route::post('/admin/import/leases', [AdminImportController::class, 'importLeases']);
     Route::post('/admin/import/charges', [AdminImportController::class, 'importCharges']);

@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { z } from 'zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   createLease,
+  createCharge,
   createProperty,
   createUnit,
   deleteUnit,
@@ -59,7 +60,20 @@ export const AdminDashboard = () => {
     due_day: '1',
     start_date: new Date().toISOString().slice(0, 10),
   })
+  const [chargeForm, setChargeForm] = useState({
+    lease_id: '',
+    amount: '',
+    due_date: new Date().toISOString().slice(0, 10),
+    status: 'due',
+  })
+  const [propertyMessage, setPropertyMessage] = useState<string | null>(null)
+  const [propertyStatus, setPropertyStatus] = useState<'success' | 'error' | null>(null)
+  const [unitMessage, setUnitMessage] = useState<string | null>(null)
+  const [unitStatus, setUnitStatus] = useState<'success' | 'error' | null>(null)
   const [leaseMessage, setLeaseMessage] = useState<string | null>(null)
+  const [leaseStatus, setLeaseStatus] = useState<'success' | 'error' | null>(null)
+  const [chargeMessage, setChargeMessage] = useState<string | null>(null)
+  const [chargeStatus, setChargeStatus] = useState<'success' | 'error' | null>(null)
 
   const [importTab, setImportTab] = useState<'units' | 'leases' | 'charges'>('units')
   const [importFile, setImportFile] = useState<File | null>(null)
@@ -68,6 +82,42 @@ export const AdminDashboard = () => {
 
   const [unitSearch, setUnitSearch] = useState('')
   const [unitPropertyFilter, setUnitPropertyFilter] = useState('all')
+
+  useEffect(() => {
+    if (!propertyMessage) return
+    const timer = window.setTimeout(() => {
+      setPropertyMessage(null)
+      setPropertyStatus(null)
+    }, 5000)
+    return () => window.clearTimeout(timer)
+  }, [propertyMessage])
+
+  useEffect(() => {
+    if (!unitMessage) return
+    const timer = window.setTimeout(() => {
+      setUnitMessage(null)
+      setUnitStatus(null)
+    }, 5000)
+    return () => window.clearTimeout(timer)
+  }, [unitMessage])
+
+  useEffect(() => {
+    if (!leaseMessage) return
+    const timer = window.setTimeout(() => {
+      setLeaseMessage(null)
+      setLeaseStatus(null)
+    }, 5000)
+    return () => window.clearTimeout(timer)
+  }, [leaseMessage])
+
+  useEffect(() => {
+    if (!chargeMessage) return
+    const timer = window.setTimeout(() => {
+      setChargeMessage(null)
+      setChargeStatus(null)
+    }, 5000)
+    return () => window.clearTimeout(timer)
+  }, [chargeMessage])
 
   const filteredUnits = useMemo(() => {
     const units = unitsQuery.data ?? []
@@ -82,7 +132,13 @@ export const AdminDashboard = () => {
     mutationFn: createProperty,
     onSuccess: () => {
       setPropertyForm({ name: '' })
+      setPropertyMessage('Property created successfully.')
+      setPropertyStatus('success')
       queryClient.invalidateQueries({ queryKey: ['admin', 'properties'] })
+    },
+    onError: (error: any) => {
+      setPropertyMessage(error?.response?.data?.message || 'Failed to create property.')
+      setPropertyStatus('error')
     },
   })
 
@@ -90,7 +146,13 @@ export const AdminDashboard = () => {
     mutationFn: createUnit,
     onSuccess: () => {
       setUnitForm({ property_id: '', name: '', notes: '' })
+      setUnitMessage('Unit created successfully.')
+      setUnitStatus('success')
       queryClient.invalidateQueries({ queryKey: ['admin', 'units'] })
+    },
+    onError: (error: any) => {
+      setUnitMessage(error?.response?.data?.message || 'Failed to create unit.')
+      setUnitStatus('error')
     },
   })
 
@@ -105,10 +167,26 @@ export const AdminDashboard = () => {
     mutationFn: createLease,
     onSuccess: () => {
       setLeaseMessage('Lease created and initial charge generated.')
+      setLeaseStatus('success')
       queryClient.invalidateQueries({ queryKey: ['admin', 'leases'] })
     },
     onError: (error: any) => {
       setLeaseMessage(error?.response?.data?.message || 'Failed to create lease.')
+      setLeaseStatus('error')
+    },
+  })
+
+  const chargeMutation = useMutation({
+    mutationFn: createCharge,
+    onSuccess: () => {
+      setChargeMessage('Charge created successfully.')
+      setChargeStatus('success')
+      setChargeForm((prev) => ({ ...prev, amount: '' }))
+      queryClient.invalidateQueries({ queryKey: ['admin', 'charges'] })
+    },
+    onError: (error: any) => {
+      setChargeMessage(error?.response?.data?.message || 'Failed to create charge.')
+      setChargeStatus('error')
     },
   })
 
@@ -158,6 +236,26 @@ export const AdminDashboard = () => {
     })
   }
 
+  const submitCharge = (event: React.FormEvent) => {
+    event.preventDefault()
+    setChargeMessage(null)
+    setChargeStatus(null)
+
+    const amountValue = Number.parseFloat(chargeForm.amount)
+    if (!chargeForm.lease_id || Number.isNaN(amountValue)) {
+      setChargeMessage('Please select a lease and enter a valid amount.')
+      setChargeStatus('error')
+      return
+    }
+
+    chargeMutation.mutate({
+      lease_id: Number(chargeForm.lease_id),
+      amount: Math.round(amountValue * 100),
+      due_date: chargeForm.due_date,
+      status: chargeForm.status as 'due' | 'paid' | 'void',
+    })
+  }
+
   return (
     <AppLayout>
       <div id="dashboard" className="flex flex-col gap-1">
@@ -167,7 +265,6 @@ export const AdminDashboard = () => {
             <h2 className="font-display text-3xl">Dashboard</h2>
             <p className="text-slate-500">Manage properties, units, leases, and imports.</p>
           </div>
-          <Button className="btn-primary">Create</Button>
         </div>
       </div>
 
@@ -287,6 +384,8 @@ export const AdminDashboard = () => {
               className="mt-4 flex gap-3"
               onSubmit={(event) => {
                 event.preventDefault()
+                setPropertyMessage(null)
+                setPropertyStatus(null)
                 if (!propertyForm.name) return
                 propertyMutation.mutate({ name: propertyForm.name })
               }}
@@ -300,6 +399,17 @@ export const AdminDashboard = () => {
                 Add
               </Button>
             </form>
+            {propertyMessage ? (
+              <div
+                className={`mt-3 rounded-xl px-4 py-3 text-sm font-semibold ${
+                  propertyStatus === 'error'
+                    ? 'bg-red-50 text-red-700'
+                    : 'bg-emerald-50 text-emerald-700'
+                }`}
+              >
+                {propertyMessage}
+              </div>
+            ) : null}
           </section>
 
           <section className="card p-6">
@@ -308,6 +418,8 @@ export const AdminDashboard = () => {
               className="mt-4 grid gap-3"
               onSubmit={(event) => {
                 event.preventDefault()
+                setUnitMessage(null)
+                setUnitStatus(null)
                 if (!unitForm.property_id || !unitForm.name) return
                 unitMutation.mutate({
                   property_id: Number(unitForm.property_id),
@@ -339,6 +451,17 @@ export const AdminDashboard = () => {
                 Add unit
               </Button>
             </form>
+            {unitMessage ? (
+              <div
+                className={`mt-3 rounded-xl px-4 py-3 text-sm font-semibold ${
+                  unitStatus === 'error'
+                    ? 'bg-red-50 text-red-700'
+                    : 'bg-emerald-50 text-emerald-700'
+                }`}
+              >
+                {unitMessage}
+              </div>
+            ) : null}
           </section>
 
           <section className="card p-6">
@@ -390,7 +513,72 @@ export const AdminDashboard = () => {
               <Button type="submit" className="btn-primary" disabled={leaseMutation.isPending}>
                 {leaseMutation.isPending ? 'Creating...' : 'Create lease'}
               </Button>
-              {leaseMessage ? <p className="text-sm text-teal">{leaseMessage}</p> : null}
+              {leaseMessage ? (
+                <div
+                  className={`rounded-xl px-4 py-3 text-sm font-semibold ${
+                    leaseStatus === 'error'
+                      ? 'bg-red-50 text-red-700'
+                      : 'bg-emerald-50 text-emerald-700'
+                  }`}
+                >
+                  {leaseMessage}
+                </div>
+              ) : null}
+            </form>
+          </section>
+
+          <section className="card p-6">
+            <h3 className="font-display text-xl">Add charge</h3>
+            <form className="mt-4 grid gap-3" onSubmit={submitCharge}>
+              <select
+                value={chargeForm.lease_id}
+                onChange={(event) => setChargeForm((prev) => ({ ...prev, lease_id: event.target.value }))}
+              >
+                <option value="">Lease</option>
+                {(leasesQuery.data ?? []).map((lease) => (
+                  <option key={lease.id} value={lease.id}>
+                    {lease.unit?.name ?? `Unit ${lease.unit_id}`} • {lease.tenant?.name ?? `Tenant ${lease.tenant_user_id}`}
+                  </option>
+                ))}
+              </select>
+              <div>
+                <label className="text-xs text-slate-500">Amount ($)</label>
+                <input
+                  value={chargeForm.amount}
+                  onChange={(event) => setChargeForm((prev) => ({ ...prev, amount: event.target.value }))}
+                  placeholder="e.g. 1500.00"
+                />
+                <p className="text-xs text-slate-400">Stored in cents internally.</p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <input
+                  type="date"
+                  value={chargeForm.due_date}
+                  onChange={(event) => setChargeForm((prev) => ({ ...prev, due_date: event.target.value }))}
+                />
+                <select
+                  value={chargeForm.status}
+                  onChange={(event) => setChargeForm((prev) => ({ ...prev, status: event.target.value }))}
+                >
+                  <option value="due">Due</option>
+                  <option value="paid">Paid</option>
+                  <option value="void">Void</option>
+                </select>
+              </div>
+              <Button type="submit" className="btn-primary" disabled={chargeMutation.isPending}>
+                {chargeMutation.isPending ? 'Saving...' : 'Add charge'}
+              </Button>
+              {chargeMessage ? (
+                <div
+                  className={`rounded-xl px-4 py-3 text-sm font-semibold ${
+                    chargeStatus === 'error'
+                      ? 'bg-red-50 text-red-700'
+                      : 'bg-emerald-50 text-emerald-700'
+                  }`}
+                >
+                  {chargeMessage}
+                </div>
+              ) : null}
             </form>
           </section>
 
