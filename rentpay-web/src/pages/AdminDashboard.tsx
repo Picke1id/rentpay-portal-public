@@ -64,6 +64,7 @@ export const AdminDashboard = () => {
   const [importTab, setImportTab] = useState<'units' | 'leases' | 'charges'>('units')
   const [importFile, setImportFile] = useState<File | null>(null)
   const [importMessage, setImportMessage] = useState<string | null>(null)
+  const [importStatus, setImportStatus] = useState<'success' | 'error' | null>(null)
 
   const [unitSearch, setUnitSearch] = useState('')
   const [unitPropertyFilter, setUnitPropertyFilter] = useState('all')
@@ -115,13 +116,20 @@ export const AdminDashboard = () => {
     mutationFn: () => importCsv(importTab, importFile as File),
     onSuccess: (data) => {
       setImportMessage(`Imported ${data.imported} rows.`)
+      setImportStatus('success')
       queryClient.invalidateQueries({ queryKey: ['admin', 'units'] })
       queryClient.invalidateQueries({ queryKey: ['admin', 'leases'] })
       queryClient.invalidateQueries({ queryKey: ['admin', 'charges'] })
     },
     onError: (error: any) => {
-      const detail = error?.response?.data?.errors?.[0]?.errors?.[0]
-      setImportMessage(detail || 'Import failed. Check CSV format.')
+      const errorList = error?.response?.data?.errors as Array<{ row: number; errors: string[] }> | undefined
+      if (errorList && errorList.length > 0) {
+        const topErrors = errorList.slice(0, 3).map((item) => `Row ${item.row}: ${item.errors[0]}`)
+        setImportMessage(topErrors.join(' • '))
+      } else {
+        setImportMessage('Import failed. Check CSV format.')
+      }
+      setImportStatus('error')
     },
   })
 
@@ -411,11 +419,25 @@ export const AdminDashboard = () => {
               <Button
                 className="btn-primary"
                 disabled={!importFile || importMutation.isPending}
-                onClick={() => importMutation.mutate()}
+                onClick={() => {
+                  setImportMessage(null)
+                  setImportStatus(null)
+                  importMutation.mutate()
+                }}
               >
                 {importMutation.isPending ? 'Validating...' : 'Import CSV'}
               </Button>
-              {importMessage ? <p className="text-sm text-teal">{importMessage}</p> : null}
+              {importMessage ? (
+                <div
+                  className={`rounded-xl px-4 py-3 text-sm font-semibold ${
+                    importStatus === 'error'
+                      ? 'bg-red-50 text-red-700'
+                      : 'bg-emerald-50 text-emerald-700'
+                  }`}
+                >
+                  {importMessage}
+                </div>
+              ) : null}
             </div>
           </section>
         </div>

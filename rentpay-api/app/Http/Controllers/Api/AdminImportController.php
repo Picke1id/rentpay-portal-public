@@ -131,7 +131,7 @@ class AdminImportController extends Controller
                 'rent_amount' => (int) $row['rent_amount'],
                 'due_day' => (int) $row['due_day'],
                 'start_date' => $row['start_date'],
-                'end_date' => Arr::get($row, 'end_date'),
+                'end_date' => $this->nullableValue(Arr::get($row, 'end_date')),
             ]);
         }
 
@@ -225,7 +225,13 @@ class AdminImportController extends Controller
             return [[], [['row' => 1, 'errors' => ['CSV file is empty.']]]];
         }
 
-        $headers = array_map(fn ($h) => strtolower(trim((string) $h)), $headers);
+        $headers = array_map(function ($h, $index) {
+            $value = trim((string) $h);
+            if ($index === 0) {
+                $value = preg_replace('/^\xEF\xBB\xBF/', '', $value);
+            }
+            return strtolower($value);
+        }, $headers, array_keys($headers));
 
         $missing = array_diff($requiredHeaders, $headers);
         if (! empty($missing)) {
@@ -238,10 +244,20 @@ class AdminImportController extends Controller
             if (count(array_filter($row, fn ($cell) => trim((string) $cell) !== '')) === 0) {
                 continue;
             }
-            $rows[] = array_combine($headers, array_pad($row, count($headers), null));
+            $normalized = array_map(fn ($cell) => is_string($cell) ? trim($cell) : $cell, $row);
+            $rows[] = array_combine($headers, array_pad($normalized, count($headers), null));
         }
         fclose($handle);
 
         return [$rows, []];
+    }
+
+    private function nullableValue($value)
+    {
+        if (is_string($value) && trim($value) === '') {
+            return null;
+        }
+
+        return $value;
     }
 }
