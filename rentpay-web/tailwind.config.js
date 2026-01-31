@@ -12,8 +12,8 @@ module.exports = {
         navy: '#223a5e',
       },
       fontFamily: {
-        sans: ['Spline Sans', 'system-ui', 'sans-serif'],
-        display: ['Space Grotesk', 'system-ui', 'sans-serif'],
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        display: ['Inter', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
         soft: '0 20px 60px rgba(30, 31, 36, 0.1)',
