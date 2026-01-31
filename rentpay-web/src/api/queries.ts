@@ -62,6 +62,16 @@ export const createLease = async (payload: {
   return data
 }
 
+export const createCharge = async (payload: {
+  lease_id: number
+  amount: number
+  due_date: string
+  status?: 'due' | 'paid' | 'void'
+}) => {
+  const { data } = await api.post('/api/admin/charges', payload)
+  return data
+}
+
 export const createCheckout = async (chargeId: number) => {
   const { data } = await api.post<{ url: string }>('/api/payments/checkout', { charge_id: chargeId })
   return data.url
