@@ -34,13 +34,6 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
             <p className="text-xs text-slate-500">Stripe‑verified rent payments</p>
           </div>
         </div>
-        <nav className="hidden items-center gap-6 text-sm font-medium text-slate-600 lg:flex">
-          {links.map((link) => (
-            <a key={link.href} href={link.href} className="hover:text-ink">
-              {link.label}
-            </a>
-          ))}
-        </nav>
         <div className="flex items-center gap-3 rounded-full bg-white px-3 py-2 shadow-soft">
           <span className="text-xs font-semibold text-slate-600">{user?.name}</span>
           <Button onClick={logout} className="btn-ghost text-xs">Sign out</Button>

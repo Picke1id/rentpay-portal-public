@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { z } from 'zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import DatePicker from 'react-datepicker'
+import 'react-datepicker/dist/react-datepicker.css'
 import {
   createLease,
   createCharge,
@@ -26,6 +28,23 @@ const leaseSchema = z.object({
 })
 
 const currency = (amount: number) => `$${(amount / 100).toFixed(2)}`
+
+const formatDisplayDate = (value?: string | null) => {
+  if (!value) return '—'
+  const isoMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})/)
+  if (isoMatch) {
+    const [, year, month, day] = isoMatch
+    return `${month}/${day}/${year}`
+  }
+  const mdYMatch = value.match(/^(\d{2})-(\d{2})-(\d{4})$/)
+  if (mdYMatch) {
+    const [, month, day, year] = mdYMatch
+    return `${month}/${day}/${year}`
+  }
+  const mdYSlashMatch = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/)
+  if (mdYSlashMatch) return value
+  return value
+}
 
 const downloadTemplate = (tab: 'units' | 'leases' | 'charges') => {
   const headers: Record<typeof tab, string> = {
@@ -58,12 +77,12 @@ export const AdminDashboard = () => {
     tenant_user_id: '',
     rent_amount: '1500.00',
     due_day: '1',
-    start_date: new Date().toISOString().slice(0, 10),
+    start_date: new Date(),
   })
   const [chargeForm, setChargeForm] = useState({
     lease_id: '',
     amount: '',
-    due_date: new Date().toISOString().slice(0, 10),
+    due_date: new Date(),
     status: 'due',
   })
   const [propertyMessage, setPropertyMessage] = useState<string | null>(null)
@@ -220,6 +239,7 @@ export const AdminDashboard = () => {
     const parsed = leaseSchema.safeParse({
       ...leaseForm,
       rent_amount: Number(parseFloat(leaseForm.rent_amount) * 100),
+      start_date: leaseForm.start_date.toISOString().slice(0, 10),
     })
 
     if (!parsed.success) {
@@ -232,7 +252,7 @@ export const AdminDashboard = () => {
       tenant_user_id: Number(leaseForm.tenant_user_id),
       rent_amount: Number(parseFloat(leaseForm.rent_amount) * 100),
       due_day: Number(leaseForm.due_day),
-      start_date: leaseForm.start_date,
+      start_date: leaseForm.start_date.toISOString().slice(0, 10),
     })
   }
 
@@ -251,7 +271,7 @@ export const AdminDashboard = () => {
     chargeMutation.mutate({
       lease_id: Number(chargeForm.lease_id),
       amount: Math.round(amountValue * 100),
-      due_date: chargeForm.due_date,
+      due_date: chargeForm.due_date.toISOString().slice(0, 10),
       status: chargeForm.status as 'due' | 'paid' | 'void',
     })
   }
@@ -292,7 +312,7 @@ export const AdminDashboard = () => {
                 </select>
               </div>
             </div>
-            <div className="mt-4 grid gap-2 text-xs uppercase tracking-[0.2em] text-slate-400">
+            <div className="mt-4 grid gap-2 text-xs uppercase tracking-[0.08em] text-slate-400">
               <div className="grid grid-cols-[1.2fr_1.2fr_1.4fr_80px] gap-3">
                 <span>Unit</span>
                 <span>Property</span>
@@ -304,16 +324,32 @@ export const AdminDashboard = () => {
                   <span>{unit.name}</span>
                   <span>{unit.property?.name ?? '—'}</span>
                   <span>{unit.notes ?? '—'}</span>
-                  <div className="text-right">
+                  <div className="flex justify-center">
                     <button
-                      className="text-xs text-slate-400 hover:text-red-500"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-600 transition hover:bg-red-100"
                       onClick={() => {
                         if (confirm('Remove this unit?')) {
                           deleteUnitMutation.mutate(unit.id)
                         }
                       }}
+                      aria-label="Remove unit"
                     >
-                      Remove
+                      <svg
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                        className="h-4 w-4"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M3 6h18" />
+                        <path d="M8 6V4h8v2" />
+                        <path d="M7 6l1 14h8l1-14" />
+                        <path d="M10 11v6" />
+                        <path d="M14 11v6" />
+                      </svg>
                     </button>
                   </div>
                 </div>
@@ -329,7 +365,7 @@ export const AdminDashboard = () => {
               <h3 className="font-display text-xl">Leases</h3>
               <span className="text-sm text-slate-400">{leasesQuery.data?.length ?? 0} total</span>
             </div>
-            <div className="mt-4 grid gap-2 text-xs uppercase tracking-[0.2em] text-slate-400">
+            <div className="mt-4 grid gap-2 text-xs uppercase tracking-[0.08em] text-slate-400">
               <div className="grid grid-cols-4 gap-3">
                 <span>Unit</span>
                 <span>Tenant</span>
@@ -341,7 +377,7 @@ export const AdminDashboard = () => {
                   <span>{lease.unit?.name ?? lease.unit_id}</span>
                   <span>{lease.tenant?.name ?? lease.tenant_user_id}</span>
                   <span>{currency(lease.rent_amount)}</span>
-                  <span>{lease.start_date}</span>
+                  <span>{formatDisplayDate(lease.start_date)}</span>
                 </div>
               ))}
               {leasesQuery.data?.length === 0 ? (
@@ -355,7 +391,7 @@ export const AdminDashboard = () => {
               <h3 className="font-display text-xl">Charges</h3>
               <span className="text-sm text-slate-400">{chargesQuery.data?.length ?? 0} total</span>
             </div>
-            <div className="mt-4 grid gap-2 text-xs uppercase tracking-[0.2em] text-slate-400">
+            <div className="mt-4 grid gap-2 text-xs uppercase tracking-[0.08em] text-slate-400">
               <div className="grid grid-cols-4 gap-3">
                 <span>Unit</span>
                 <span>Tenant</span>
@@ -367,7 +403,17 @@ export const AdminDashboard = () => {
                   <span>{charge.unit ?? '—'}</span>
                   <span>{charge.tenant ?? '—'}</span>
                   <span>{currency(charge.amount)}</span>
-                  <span className="capitalize">{charge.status}</span>
+                  <span
+                    className={`inline-flex w-fit justify-self-start rounded-full px-2 py-0.5 text-xs font-semibold capitalize ${
+                      charge.status === 'paid'
+                        ? 'bg-emerald-50 text-emerald-700'
+                        : charge.status === 'due'
+                          ? 'bg-red-50 text-red-700'
+                          : 'bg-slate-100 text-slate-700'
+                    }`}
+                  >
+                    {charge.status}
+                  </span>
                 </div>
               ))}
               {chargesQuery.data?.length === 0 ? (
@@ -504,10 +550,11 @@ export const AdminDashboard = () => {
                     <option key={day} value={day}>{day}</option>
                   ))}
                 </select>
-                <input
-                  type="date"
-                  value={leaseForm.start_date}
-                  onChange={(event) => setLeaseForm((prev) => ({ ...prev, start_date: event.target.value }))}
+                <DatePicker
+                  selected={leaseForm.start_date}
+                  onChange={(date) => date && setLeaseForm((prev) => ({ ...prev, start_date: date }))}
+                  dateFormat="MM/dd/yyyy"
+                  className="w-full"
                 />
               </div>
               <Button type="submit" className="btn-primary" disabled={leaseMutation.isPending}>
@@ -551,10 +598,11 @@ export const AdminDashboard = () => {
                 <p className="text-xs text-slate-400">Stored in cents internally.</p>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <input
-                  type="date"
-                  value={chargeForm.due_date}
-                  onChange={(event) => setChargeForm((prev) => ({ ...prev, due_date: event.target.value }))}
+                <DatePicker
+                  selected={chargeForm.due_date}
+                  onChange={(date) => date && setChargeForm((prev) => ({ ...prev, due_date: date }))}
+                  dateFormat="MM/dd/yyyy"
+                  className="w-full"
                 />
                 <select
                   value={chargeForm.status}

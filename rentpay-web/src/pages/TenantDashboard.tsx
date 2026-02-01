@@ -57,7 +57,17 @@ export const TenantDashboard = () => {
             <div className="grid grid-cols-4 items-center gap-3 border-b border-stone py-2 text-sm text-slate-700" key={charge.id}>
               <span>{charge.due_date}</span>
               <span>{formatMoney(charge.amount)}</span>
-              <span className="font-semibold capitalize text-orange-600">{charge.status}</span>
+              <span
+                className={`inline-flex w-fit justify-self-start rounded-full px-2 py-0.5 text-xs font-semibold capitalize ${
+                  charge.status === 'paid'
+                    ? 'bg-emerald-50 text-emerald-700'
+                    : charge.status === 'due'
+                      ? 'bg-red-50 text-red-700'
+                      : 'bg-slate-100 text-slate-700'
+                }`}
+              >
+                {charge.status}
+              </span>
               <Button
                 className="btn-primary"
                 onClick={() => checkoutMutation.mutate(charge.id)}
