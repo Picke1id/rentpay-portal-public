@@ -51,6 +51,11 @@ export const deleteUnit = async (unitId: number) => {
   return data
 }
 
+export const updateUnit = async (unitId: number, payload: { property_id: number; name: string; notes?: string }) => {
+  const { data } = await api.put(`/api/units/${unitId}`, payload)
+  return data
+}
+
 export const createLease = async (payload: {
   unit_id: number
   tenant_user_id: number
