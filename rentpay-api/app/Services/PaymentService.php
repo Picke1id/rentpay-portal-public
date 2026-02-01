@@ -85,17 +85,34 @@ class PaymentService
                 $paymentId = $session->metadata->payment_id ?? null;
                 $paymentIntent = $session->payment_intent ?? null;
 
-                if (! $paymentId) {
-                    return;
-                }
+                $payment = $paymentId
+                    ? Payment::find($paymentId)
+                    : Payment::query()->where('provider_payment_id', $session->id ?? null)->first();
 
-                $payment = Payment::find($paymentId);
                 if (! $payment) {
                     return;
                 }
 
                 $payment->update([
                     'provider_payment_id' => $paymentIntent ?: $payment->provider_payment_id,
+                    'status' => 'succeeded',
+                    'paid_at' => Carbon::now(),
+                ]);
+
+                $payment->charge?->update([
+                    'status' => 'paid',
+                ]);
+            }
+
+            if ($event->type === 'payment_intent.succeeded') {
+                $intent = $event->data->object;
+                $payment = Payment::query()->where('provider_payment_id', $intent->id ?? null)->first();
+
+                if (! $payment) {
+                    return;
+                }
+
+                $payment->update([
                     'status' => 'succeeded',
                     'paid_at' => Carbon::now(),
                 ]);
