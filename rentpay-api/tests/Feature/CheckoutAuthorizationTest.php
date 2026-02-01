@@ -9,6 +9,7 @@ use App\Models\Unit;
 use App\Models\User;
 use App\Services\PaymentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Auth\Access\AuthorizationException;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -37,7 +38,8 @@ class CheckoutAuthorizationTest extends TestCase
         ]);
 
         $this->mock(PaymentService::class, function ($mock) {
-            $mock->shouldReceive('createCheckoutSession')->never();
+            $mock->shouldReceive('createCheckoutSession')
+                ->andThrow(new AuthorizationException('Not allowed to pay this charge.'));
         });
 
         Sanctum::actingAs($admin);

@@ -10,6 +10,7 @@ use App\Models\Unit;
 use App\Models\User;
 use App\Services\PaymentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -46,7 +47,8 @@ class DuplicateCheckoutTest extends TestCase
         ]);
 
         $this->mock(PaymentService::class, function ($mock) {
-            $mock->shouldReceive('createCheckoutSession')->never();
+            $mock->shouldReceive('createCheckoutSession')
+                ->andThrow(new ConflictHttpException('A payment is already in progress for this charge.'));
         });
 
         Sanctum::actingAs($tenant);
