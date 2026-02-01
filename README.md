@@ -11,6 +11,14 @@ Full-stack rent payment MVP demo built with **Laravel + React (Vite) + Stripe (t
 - CSV imports (units, leases, charges)
 - Role-based access control (Admin vs Tenant)
 
+## Project Structure
+```
+payment-portal/
+  rentpay-api/   # Laravel API
+  rentpay-web/   # React + Vite frontend
+  docs/          # Screenshots and supporting docs
+```
+
 ## Tech Stack
 - **Backend:** Laravel 12, Sanctum, MySQL, Stripe PHP
 - **Frontend:** React + TypeScript, Vite, React Query, Axios, Zod, Tailwind CSS
@@ -19,6 +27,7 @@ Full-stack rent payment MVP demo built with **Laravel + React (Vite) + Stripe (t
 - Role-based access (admin vs tenant) enforced with policies + Sanctum
 - Stripe payments finalized via webhooks only
 - CSV imports validated with ownership checks and row limits
+- Payments are created as pending; status is updated only via Stripe webhook
 
 ## Demo Accounts
 Seeded credentials (via `php artisan db:seed`):
@@ -83,6 +92,13 @@ stripe listen --forward-to http://localhost:8000/api/webhooks/stripe
 Any future date / Any CVC / Any ZIP
 ```
 
+## CSV Import Templates
+Use the Download Template buttons in the Admin UI, or create CSVs with these headers:
+
+- **Units:** `property_id,name,notes`
+- **Leases:** `unit_id,tenant_user_id,rent_amount,due_day,start_date,end_date`
+- **Charges:** `lease_id,amount,due_date,status`
+
 ## API Notes
 - Admin CRUD: `/api/properties`, `/api/units`, `/api/leases`
 - Admin imports: `/api/admin/import/*`
@@ -104,6 +120,11 @@ npm run lint
 cd rentpay-web
 npm run dev
 ```
+
+## Roadmap Ideas
+- Edit leases + charges (full CRUD)
+- ACH payments (Stripe Financial Connections)
+- Audit log UI and CSV export for payments
 
 ## License
 MIT
