@@ -9,6 +9,7 @@ import {
   createProperty,
   createUnit,
   deleteUnit,
+  updateUnit,
   fetchAdminCharges,
   fetchLeases,
   fetchProperties,
@@ -81,6 +82,8 @@ export const AdminDashboard = () => {
 
   const [propertyForm, setPropertyForm] = useState({ name: '' })
   const [unitForm, setUnitForm] = useState({ property_id: '', name: '', notes: '' })
+  const [editingUnitId, setEditingUnitId] = useState<number | null>(null)
+  const [editUnitForm, setEditUnitForm] = useState({ property_id: '', name: '', notes: '' })
   const [leaseForm, setLeaseForm] = useState({
     unit_id: '',
     tenant_user_id: '',
@@ -110,6 +113,7 @@ export const AdminDashboard = () => {
 
   const [unitSearch, setUnitSearch] = useState('')
   const [unitPropertyFilter, setUnitPropertyFilter] = useState('all')
+  const [leaseSearch, setLeaseSearch] = useState('')
 
   useEffect(() => {
     if (!propertyMessage) return
@@ -156,6 +160,17 @@ export const AdminDashboard = () => {
     })
   }, [unitsQuery.data, unitSearch, unitPropertyFilter])
 
+  const filteredLeases = useMemo(() => {
+    const leases = leasesQuery.data ?? []
+    const query = leaseSearch.trim().toLowerCase()
+    if (!query) return leases
+    return leases.filter((lease) => {
+      const unitName = lease.unit?.name?.toLowerCase() ?? ''
+      const tenantName = lease.tenant?.name?.toLowerCase() ?? ''
+      return unitName.includes(query) || tenantName.includes(query)
+    })
+  }, [leasesQuery.data, leaseSearch])
+
   const propertyMutation = useMutation({
     mutationFn: createProperty,
     onSuccess: () => {
@@ -181,6 +196,16 @@ export const AdminDashboard = () => {
     onError: (error: any) => {
       setUnitMessage(error?.response?.data?.message || 'Failed to create unit.')
       setUnitStatus('error')
+    },
+  })
+
+  const updateUnitMutation = useMutation({
+    mutationFn: ({ unitId, payload }: { unitId: number; payload: { property_id: number; name: string; notes?: string } }) =>
+      updateUnit(unitId, payload),
+    onSuccess: () => {
+      setEditingUnitId(null)
+      setEditUnitForm({ property_id: '', name: '', notes: '' })
+      queryClient.invalidateQueries({ queryKey: ['admin', 'units'] })
     },
   })
 
@@ -322,45 +347,123 @@ export const AdminDashboard = () => {
               </div>
             </div>
             <div className="mt-4 grid gap-2 text-xs uppercase tracking-[0.08em] text-slate-400">
-              <div className="grid grid-cols-[1.2fr_1.2fr_1.4fr_80px] gap-3">
+              <div className="grid grid-cols-[1.2fr_1.2fr_1.4fr_140px] gap-3">
                 <span>Unit</span>
                 <span>Property</span>
                 <span>Notes</span>
-                <span className="text-right">Actions</span>
+                <span className="text-center">Actions</span>
               </div>
               {filteredUnits.map((unit) => (
-                <div key={unit.id} className="grid grid-cols-[1.2fr_1.2fr_1.4fr_80px] items-center gap-3 border-b border-stone py-2 text-sm normal-case text-slate-700">
-                  <span>{unit.name}</span>
-                  <span>{unit.property?.name ?? '—'}</span>
-                  <span>{unit.notes ?? '—'}</span>
-                  <div className="flex justify-center">
-                    <button
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-600 transition hover:bg-red-100"
-                      onClick={() => {
-                        if (confirm('Remove this unit?')) {
-                          deleteUnitMutation.mutate(unit.id)
-                        }
-                      }}
-                      aria-label="Remove unit"
-                    >
-                      <svg
-                        viewBox="0 0 24 24"
-                        aria-hidden="true"
-                        className="h-4 w-4"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
+                <div key={unit.id} className="grid grid-cols-[1.2fr_1.2fr_1.4fr_140px] items-center gap-3 border-b border-stone py-2 text-sm normal-case text-slate-700">
+                  {editingUnitId === unit.id ? (
+                    <>
+                      <input
+                        value={editUnitForm.name}
+                        onChange={(event) => setEditUnitForm((prev) => ({ ...prev, name: event.target.value }))}
+                      />
+                      <select
+                        value={editUnitForm.property_id}
+                        onChange={(event) => setEditUnitForm((prev) => ({ ...prev, property_id: event.target.value }))}
                       >
-                        <path d="M3 6h18" />
-                        <path d="M8 6V4h8v2" />
-                        <path d="M7 6l1 14h8l1-14" />
-                        <path d="M10 11v6" />
-                        <path d="M14 11v6" />
-                      </svg>
-                    </button>
-                  </div>
+                        <option value="">Property</option>
+                        {(propertiesQuery.data ?? []).map((property) => (
+                          <option key={property.id} value={property.id}>{property.name}</option>
+                        ))}
+                      </select>
+                      <input
+                        value={editUnitForm.notes}
+                        onChange={(event) => setEditUnitForm((prev) => ({ ...prev, notes: event.target.value }))}
+                        placeholder="Notes"
+                      />
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          className="inline-flex h-8 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100"
+                          onClick={() => {
+                            if (!editUnitForm.property_id || !editUnitForm.name) return
+                            updateUnitMutation.mutate({
+                              unitId: unit.id,
+                              payload: {
+                                property_id: Number(editUnitForm.property_id),
+                                name: editUnitForm.name,
+                                notes: editUnitForm.notes || undefined,
+                              },
+                            })
+                          }}
+                        >
+                          Save
+                        </button>
+                        <button
+                          className="inline-flex h-8 items-center justify-center rounded-lg border border-stone bg-white px-3 text-xs font-semibold text-slate-600 hover:bg-stone/40"
+                          onClick={() => {
+                            setEditingUnitId(null)
+                            setEditUnitForm({ property_id: '', name: '', notes: '' })
+                          }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <span>{unit.name}</span>
+                      <span>{unit.property?.name ?? '—'}</span>
+                      <span>{unit.notes ?? '—'}</span>
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-stone bg-white text-slate-500 transition hover:bg-stone/40"
+                          onClick={() => {
+                            setEditingUnitId(unit.id)
+                            setEditUnitForm({
+                              property_id: String(unit.property_id),
+                              name: unit.name,
+                              notes: unit.notes ?? '',
+                            })
+                          }}
+                          aria-label="Edit unit"
+                        >
+                          <svg
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                            className="h-4 w-4"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.8"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M12 20h9" />
+                            <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+                          </svg>
+                        </button>
+                        <button
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-600 transition hover:bg-red-100"
+                          onClick={() => {
+                            if (confirm('Remove this unit?')) {
+                              deleteUnitMutation.mutate(unit.id)
+                            }
+                          }}
+                          aria-label="Remove unit"
+                        >
+                          <svg
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                            className="h-4 w-4"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.8"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M3 6h18" />
+                            <path d="M8 6V4h8v2" />
+                            <path d="M7 6l1 14h8l1-14" />
+                            <path d="M10 11v6" />
+                            <path d="M14 11v6" />
+                          </svg>
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
               ))}
               {filteredUnits.length === 0 ? (
@@ -370,9 +473,17 @@ export const AdminDashboard = () => {
           </section>
 
           <section id="leases" className="card p-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <h3 className="font-display text-xl">Leases</h3>
-              <span className="text-sm text-slate-400">{leasesQuery.data?.length ?? 0} total</span>
+              <div className="flex items-center gap-3">
+                <input
+                  className="w-48"
+                  placeholder="Search leases"
+                  value={leaseSearch}
+                  onChange={(event) => setLeaseSearch(event.target.value)}
+                />
+                <span className="text-sm text-slate-400">{filteredLeases.length} total</span>
+              </div>
             </div>
             <div className="mt-4 grid gap-2 text-xs uppercase tracking-[0.08em] text-slate-400">
               <div className="grid grid-cols-4 gap-3">
@@ -381,7 +492,7 @@ export const AdminDashboard = () => {
                 <span>Rent</span>
                 <span>Start</span>
               </div>
-              {(leasesQuery.data ?? []).map((lease) => (
+              {filteredLeases.map((lease) => (
                 <div key={lease.id} className="grid grid-cols-4 gap-3 border-b border-stone py-2 text-sm normal-case text-slate-700">
                   <span>{lease.unit?.name ?? lease.unit_id}</span>
                   <span>{lease.tenant?.name ?? lease.tenant_user_id}</span>
@@ -389,7 +500,7 @@ export const AdminDashboard = () => {
                   <span>{formatDisplayDate(lease.start_date)}</span>
                 </div>
               ))}
-              {leasesQuery.data?.length === 0 ? (
+              {filteredLeases.length === 0 ? (
                 <div className="rounded-xl bg-stone/40 p-4 text-sm normal-case text-slate-500">No leases yet.</div>
               ) : null}
             </div>
