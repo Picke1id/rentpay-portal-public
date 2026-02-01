@@ -16,6 +16,9 @@ use Illuminate\Support\Facades\Validator;
 
 class AdminImportController extends Controller
 {
+    private const MAX_IMPORT_ROWS = 1000;
+    private const MAX_IMPORT_KB = 5120;
+
     public function __construct(private LeaseService $leaseService)
     {
     }
@@ -196,7 +199,7 @@ class AdminImportController extends Controller
     private function validateFile(Request $request)
     {
         $request->validate([
-            'file' => ['required', 'file', 'mimes:csv,txt'],
+            'file' => ['required', 'file', 'mimes:csv,txt', 'max:'.self::MAX_IMPORT_KB],
         ]);
 
         return $request->file('file');
@@ -246,6 +249,10 @@ class AdminImportController extends Controller
             }
             $normalized = array_map(fn ($cell) => is_string($cell) ? trim($cell) : $cell, $row);
             $rows[] = array_combine($headers, array_pad($normalized, count($headers), null));
+            if (count($rows) > self::MAX_IMPORT_ROWS) {
+                fclose($handle);
+                return [[], [['row' => 1, 'errors' => ['CSV exceeds maximum row limit.']]]];
+            }
         }
         fclose($handle);
 

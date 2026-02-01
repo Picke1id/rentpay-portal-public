@@ -9,6 +9,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\DatabaseManager;
+use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use Stripe\StripeClient;
 
 class PaymentService
@@ -25,6 +26,16 @@ class PaymentService
 
         if ($charge->status !== 'due') {
             throw new AuthorizationException('Charge is not payable.');
+        }
+
+        $existing = Payment::query()
+            ->where('charge_id', $charge->id)
+            ->where('status', 'pending')
+            ->latest()
+            ->first();
+
+        if ($existing) {
+            throw new ConflictHttpException('A payment is already in progress for this charge.');
         }
 
         $stripe = new StripeClient(config('services.stripe.secret'));

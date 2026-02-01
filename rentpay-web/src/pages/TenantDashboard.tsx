@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { createCheckout, fetchTenantCharges, fetchTenantPayments } from '../api/queries'
 import { StatCard } from '../components/StatCard'
@@ -28,11 +28,15 @@ const formatDisplayDate = (value?: string | null) => {
 export const TenantDashboard = () => {
   const chargesQuery = useQuery({ queryKey: ['tenant', 'charges'], queryFn: fetchTenantCharges })
   const paymentsQuery = useQuery({ queryKey: ['tenant', 'payments'], queryFn: fetchTenantPayments })
+  const [checkoutError, setCheckoutError] = useState<string | null>(null)
 
   const checkoutMutation = useMutation({
     mutationFn: createCheckout,
     onSuccess: (url) => {
       window.location.href = url
+    },
+    onError: (error: any) => {
+      setCheckoutError(error?.response?.data?.message || 'Unable to start checkout. Try again.')
     },
   })
 
@@ -64,6 +68,9 @@ export const TenantDashboard = () => {
           <h3 className="font-display text-xl">Open charges</h3>
           <span className="text-sm text-slate-400">{chargesQuery.isLoading ? 'Loading...' : ''}</span>
         </div>
+        {checkoutError ? (
+          <div className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{checkoutError}</div>
+        ) : null}
         <div className="grid gap-3">
           <div className="grid grid-cols-4 gap-3 border-b border-stone pb-2 text-xs uppercase tracking-[0.2em] text-slate-400">
             <span>Due date</span>
@@ -88,7 +95,10 @@ export const TenantDashboard = () => {
               </span>
               <Button
                 className="btn-primary"
-                onClick={() => checkoutMutation.mutate(charge.id)}
+                onClick={() => {
+                  setCheckoutError(null)
+                  checkoutMutation.mutate(charge.id)
+                }}
                 disabled={checkoutMutation.isPending}
               >
                 Pay now
