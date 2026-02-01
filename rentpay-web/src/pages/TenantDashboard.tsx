@@ -4,26 +4,10 @@ import { createCheckout, fetchTenantCharges, fetchTenantPayments } from '../api/
 import { StatCard } from '../components/StatCard'
 import { Button } from '../components/Button'
 import { AppLayout } from '../components/AppLayout'
-
-const formatMoney = (amount: number) =>
-  `$${(amount / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-
-const formatDisplayDate = (value?: string | null) => {
-  if (!value) return '—'
-  const isoMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})/)
-  if (isoMatch) {
-    const [, year, month, day] = isoMatch
-    return `${month}/${day}/${year}`
-  }
-  const mdYMatch = value.match(/^(\d{2})-(\d{2})-(\d{4})$/)
-  if (mdYMatch) {
-    const [, month, day, year] = mdYMatch
-    return `${month}/${day}/${year}`
-  }
-  const mdYSlashMatch = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/)
-  if (mdYSlashMatch) return value
-  return value
-}
+import { Alert } from '../components/Alert'
+import { StatusBadge } from '../components/StatusBadge'
+import { formatDisplayDate, formatMoney } from '../utils/format'
+import { getErrorMessage } from '../utils/http'
 
 export const TenantDashboard = () => {
   const chargesQuery = useQuery({ queryKey: ['tenant', 'charges'], queryFn: fetchTenantCharges })
@@ -35,8 +19,8 @@ export const TenantDashboard = () => {
     onSuccess: (url) => {
       window.location.href = url
     },
-    onError: (error: any) => {
-      setCheckoutError(error?.response?.data?.message || 'Unable to start checkout. Try again.')
+    onError: (error: unknown) => {
+      setCheckoutError(getErrorMessage(error, 'Unable to start checkout. Try again.'))
     },
   })
 
@@ -68,9 +52,7 @@ export const TenantDashboard = () => {
           <h3 className="font-display text-xl">Open charges</h3>
           <span className="text-sm text-slate-400">{chargesQuery.isLoading ? 'Loading...' : ''}</span>
         </div>
-        {checkoutError ? (
-          <div className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{checkoutError}</div>
-        ) : null}
+        {checkoutError ? <Alert type="error" message={checkoutError} className="mb-4" /> : null}
         <div className="grid gap-3">
           <div className="grid grid-cols-4 gap-3 border-b border-stone pb-2 text-xs uppercase tracking-[0.2em] text-slate-400">
             <span>Due date</span>
@@ -82,17 +64,7 @@ export const TenantDashboard = () => {
             <div className="grid grid-cols-4 items-center gap-3 border-b border-stone py-2 text-sm text-slate-700" key={charge.id}>
               <span>{formatDisplayDate(charge.due_date)}</span>
               <span>{formatMoney(charge.amount)}</span>
-              <span
-                className={`inline-flex w-fit justify-self-start rounded-full px-2 py-0.5 text-xs font-semibold capitalize ${
-                  charge.status === 'paid'
-                    ? 'bg-emerald-50 text-emerald-700'
-                    : charge.status === 'due'
-                      ? 'bg-red-50 text-red-700'
-                      : 'bg-slate-100 text-slate-700'
-                }`}
-              >
-                {charge.status}
-              </span>
+              <StatusBadge status={charge.status} />
               <Button
                 className="btn-primary"
                 onClick={() => {
@@ -125,17 +97,7 @@ export const TenantDashboard = () => {
             <div className="grid grid-cols-3 items-center gap-3 border-b border-stone py-2 text-sm text-slate-700" key={payment.id}>
               <span>{formatDisplayDate(payment.paid_at ?? payment.created_at)}</span>
               <span>{formatMoney(payment.amount)}</span>
-              <span
-                className={`inline-flex w-fit justify-self-start rounded-full px-2 py-0.5 text-xs font-semibold capitalize ${
-                  payment.status === 'succeeded'
-                    ? 'bg-emerald-50 text-emerald-700'
-                    : payment.status === 'failed'
-                      ? 'bg-red-50 text-red-700'
-                  : 'bg-amber-50 text-amber-700'
-                }`}
-              >
-                {payment.status}
-              </span>
+              <StatusBadge status={payment.status === 'succeeded' ? 'succeeded' : payment.status === 'failed' ? 'failed' : 'pending'} />
             </div>
           ))}
           {paymentsQuery.data?.length === 0 && !paymentsQuery.isLoading ? (
