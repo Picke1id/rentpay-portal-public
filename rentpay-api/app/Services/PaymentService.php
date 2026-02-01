@@ -9,6 +9,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\DatabaseManager;
+use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use Stripe\StripeClient;
 
 class PaymentService
@@ -25,6 +26,16 @@ class PaymentService
 
         if ($charge->status !== 'due') {
             throw new AuthorizationException('Charge is not payable.');
+        }
+
+        $existing = Payment::query()
+            ->where('charge_id', $charge->id)
+            ->where('status', 'pending')
+            ->latest()
+            ->first();
+
+        if ($existing) {
+            throw new ConflictHttpException('A payment is already in progress for this charge.');
         }
 
         $stripe = new StripeClient(config('services.stripe.secret'));
@@ -85,17 +96,34 @@ class PaymentService
                 $paymentId = $session->metadata->payment_id ?? null;
                 $paymentIntent = $session->payment_intent ?? null;
 
-                if (! $paymentId) {
-                    return;
-                }
+                $payment = $paymentId
+                    ? Payment::find($paymentId)
+                    : Payment::query()->where('provider_payment_id', $session->id ?? null)->first();
 
-                $payment = Payment::find($paymentId);
                 if (! $payment) {
                     return;
                 }
 
                 $payment->update([
                     'provider_payment_id' => $paymentIntent ?: $payment->provider_payment_id,
+                    'status' => 'succeeded',
+                    'paid_at' => Carbon::now(),
+                ]);
+
+                $payment->charge?->update([
+                    'status' => 'paid',
+                ]);
+            }
+
+            if ($event->type === 'payment_intent.succeeded') {
+                $intent = $event->data->object;
+                $payment = Payment::query()->where('provider_payment_id', $intent->id ?? null)->first();
+
+                if (! $payment) {
+                    return;
+                }
+
+                $payment->update([
                     'status' => 'succeeded',
                     'paid_at' => Carbon::now(),
                 ]);

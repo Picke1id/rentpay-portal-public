@@ -17,7 +17,7 @@ class ChargeStoreRequest extends FormRequest
             'lease_id' => ['required', 'exists:leases,id'],
             'amount' => ['required', 'integer', 'min:1'],
             'due_date' => ['required', 'date'],
-            'status' => ['nullable', 'in:due,paid,void'],
+            'status' => ['nullable', 'in:due,void'],
         ];
     }
 }
