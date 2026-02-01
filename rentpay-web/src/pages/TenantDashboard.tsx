@@ -5,7 +5,25 @@ import { StatCard } from '../components/StatCard'
 import { Button } from '../components/Button'
 import { AppLayout } from '../components/AppLayout'
 
-const formatMoney = (amount: number) => `$${(amount / 100).toFixed(2)}`
+const formatMoney = (amount: number) =>
+  `$${(amount / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+
+const formatDisplayDate = (value?: string | null) => {
+  if (!value) return '—'
+  const isoMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})/)
+  if (isoMatch) {
+    const [, year, month, day] = isoMatch
+    return `${month}/${day}/${year}`
+  }
+  const mdYMatch = value.match(/^(\d{2})-(\d{2})-(\d{4})$/)
+  if (mdYMatch) {
+    const [, month, day, year] = mdYMatch
+    return `${month}/${day}/${year}`
+  }
+  const mdYSlashMatch = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/)
+  if (mdYSlashMatch) return value
+  return value
+}
 
 export const TenantDashboard = () => {
   const chargesQuery = useQuery({ queryKey: ['tenant', 'charges'], queryFn: fetchTenantCharges })
@@ -55,7 +73,7 @@ export const TenantDashboard = () => {
           </div>
           {(chargesQuery.data ?? []).map((charge) => (
             <div className="grid grid-cols-4 items-center gap-3 border-b border-stone py-2 text-sm text-slate-700" key={charge.id}>
-              <span>{charge.due_date}</span>
+              <span>{formatDisplayDate(charge.due_date)}</span>
               <span>{formatMoney(charge.amount)}</span>
               <span
                 className={`inline-flex w-fit justify-self-start rounded-full px-2 py-0.5 text-xs font-semibold capitalize ${
@@ -95,9 +113,19 @@ export const TenantDashboard = () => {
           </div>
           {(paymentsQuery.data ?? []).map((payment) => (
             <div className="grid grid-cols-3 items-center gap-3 border-b border-stone py-2 text-sm text-slate-700" key={payment.id}>
-              <span>{payment.paid_at ?? payment.created_at ?? '—'}</span>
+              <span>{formatDisplayDate(payment.paid_at ?? payment.created_at)}</span>
               <span>{formatMoney(payment.amount)}</span>
-              <span className={`font-semibold capitalize ${payment.status === 'succeeded' ? 'text-emerald-600' : payment.status === 'failed' ? 'text-red-600' : 'text-slate-500'}`}>{payment.status}</span>
+              <span
+                className={`inline-flex w-fit justify-self-start rounded-full px-2 py-0.5 text-xs font-semibold capitalize ${
+                  payment.status === 'succeeded'
+                    ? 'bg-emerald-50 text-emerald-700'
+                    : payment.status === 'failed'
+                      ? 'bg-red-50 text-red-700'
+                  : 'bg-amber-50 text-amber-700'
+                }`}
+              >
+                {payment.status}
+              </span>
             </div>
           ))}
           {paymentsQuery.data?.length === 0 && !paymentsQuery.isLoading ? (
