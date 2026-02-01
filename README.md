@@ -125,6 +125,7 @@ npm run dev
 - Edit leases + charges (full CRUD)
 - ACH payments (Stripe Financial Connections)
 - Audit log UI and CSV export for payments
+- Admin CSV export for payments (pro feature)
 
 ## License
 MIT
