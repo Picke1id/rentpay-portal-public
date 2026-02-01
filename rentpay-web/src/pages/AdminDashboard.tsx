@@ -323,15 +323,16 @@ export const AdminDashboard = () => {
                 </select>
               </div>
             </div>
-            <div className="mt-4 grid gap-2 text-xs uppercase tracking-[0.08em] text-slate-400">
-              <div className="grid grid-cols-[1.2fr_1.2fr_1.4fr_140px] gap-3">
-                <span>Unit</span>
-                <span>Property</span>
-                <span>Notes</span>
-                <span className="text-center">Actions</span>
-              </div>
-              {filteredUnits.map((unit) => (
-                <div key={unit.id} className="grid grid-cols-[1.2fr_1.2fr_1.4fr_140px] items-center gap-3 border-b border-stone py-2 text-sm normal-case text-slate-700">
+            <div className="mt-4 overflow-x-auto">
+              <div className="min-w-[560px] grid gap-2 text-xs uppercase tracking-[0.08em] text-slate-400">
+                <div className="grid grid-cols-[1.2fr_1.2fr_1.4fr_140px] gap-3">
+                  <span>Unit</span>
+                  <span>Property</span>
+                  <span>Notes</span>
+                  <span className="text-center">Actions</span>
+                </div>
+                {filteredUnits.map((unit) => (
+                  <div key={unit.id} className="grid grid-cols-[1.2fr_1.2fr_1.4fr_140px] items-center gap-3 border-b border-stone py-2 text-sm normal-case text-slate-700">
                   {editingUnitId === unit.id ? (
                     <>
                       <input
@@ -441,11 +442,12 @@ export const AdminDashboard = () => {
                       </div>
                     </>
                   )}
-                </div>
-              ))}
-              {filteredUnits.length === 0 ? (
-                <div className="rounded-xl bg-stone/40 p-4 text-sm normal-case text-slate-500">No units yet. Add one →</div>
-              ) : null}
+                  </div>
+                ))}
+                {filteredUnits.length === 0 ? (
+                  <div className="rounded-xl bg-stone/40 p-4 text-sm normal-case text-slate-500">No units yet. Add one →</div>
+                ) : null}
+              </div>
             </div>
           </section>
 
@@ -462,24 +464,26 @@ export const AdminDashboard = () => {
                 <span className="text-sm text-slate-400">{filteredLeases.length} total</span>
               </div>
             </div>
-            <div className="mt-4 grid gap-2 text-xs uppercase tracking-[0.08em] text-slate-400">
-              <div className="grid grid-cols-4 gap-3">
-                <span>Unit</span>
-                <span>Tenant</span>
-                <span>Rent</span>
-                <span>Start</span>
-              </div>
-              {filteredLeases.map((lease) => (
-                <div key={lease.id} className="grid grid-cols-4 gap-3 border-b border-stone py-2 text-sm normal-case text-slate-700">
-                  <span>{lease.unit?.name ?? lease.unit_id}</span>
-                  <span>{lease.tenant?.name ?? lease.tenant_user_id}</span>
-                  <span>{formatMoney(lease.rent_amount)}</span>
-                  <span>{formatDisplayDate(lease.start_date)}</span>
+            <div className="mt-4 overflow-x-auto">
+              <div className="min-w-[520px] grid gap-2 text-xs uppercase tracking-[0.08em] text-slate-400">
+                <div className="grid grid-cols-4 gap-3">
+                  <span>Unit</span>
+                  <span>Tenant</span>
+                  <span>Rent</span>
+                  <span>Start</span>
                 </div>
-              ))}
-              {filteredLeases.length === 0 ? (
-                <div className="rounded-xl bg-stone/40 p-4 text-sm normal-case text-slate-500">No leases yet.</div>
-              ) : null}
+                {filteredLeases.map((lease) => (
+                  <div key={lease.id} className="grid grid-cols-4 gap-3 border-b border-stone py-2 text-sm normal-case text-slate-700">
+                    <span>{lease.unit?.name ?? lease.unit_id}</span>
+                    <span>{lease.tenant?.name ?? lease.tenant_user_id}</span>
+                    <span>{formatMoney(lease.rent_amount)}</span>
+                    <span>{formatDisplayDate(lease.start_date)}</span>
+                  </div>
+                ))}
+                {filteredLeases.length === 0 ? (
+                  <div className="rounded-xl bg-stone/40 p-4 text-sm normal-case text-slate-500">No leases yet.</div>
+                ) : null}
+              </div>
             </div>
           </section>
 
@@ -488,24 +492,26 @@ export const AdminDashboard = () => {
               <h3 className="font-display text-xl">Charges</h3>
               <span className="text-sm text-slate-400">{chargesQuery.data?.length ?? 0} total</span>
             </div>
-            <div className="mt-4 grid gap-2 text-xs uppercase tracking-[0.08em] text-slate-400">
-              <div className="grid grid-cols-4 gap-3">
-                <span>Unit</span>
-                <span>Tenant</span>
-                <span>Amount</span>
-                <span>Status</span>
-              </div>
-              {(chargesQuery.data ?? []).map((charge) => (
-                <div key={charge.id} className="grid grid-cols-4 gap-3 border-b border-stone py-2 text-sm normal-case text-slate-700">
-                  <span>{charge.unit ?? '—'}</span>
-                  <span>{charge.tenant ?? '—'}</span>
-                  <span>{formatMoney(charge.amount)}</span>
-                  <StatusBadge status={charge.status} />
+            <div className="mt-4 overflow-x-auto">
+              <div className="min-w-[520px] grid gap-2 text-xs uppercase tracking-[0.08em] text-slate-400">
+                <div className="grid grid-cols-4 gap-3">
+                  <span>Unit</span>
+                  <span>Tenant</span>
+                  <span>Amount</span>
+                  <span>Status</span>
                 </div>
-              ))}
-              {chargesQuery.data?.length === 0 ? (
-                <div className="rounded-xl bg-stone/40 p-4 text-sm normal-case text-slate-500">No charges yet.</div>
-              ) : null}
+                {(chargesQuery.data ?? []).map((charge) => (
+                  <div key={charge.id} className="grid grid-cols-4 gap-3 border-b border-stone py-2 text-sm normal-case text-slate-700">
+                    <span>{charge.unit ?? '—'}</span>
+                    <span>{charge.tenant ?? '—'}</span>
+                    <span>{formatMoney(charge.amount)}</span>
+                    <StatusBadge status={charge.status} />
+                  </div>
+                ))}
+                {chargesQuery.data?.length === 0 ? (
+                  <div className="rounded-xl bg-stone/40 p-4 text-sm normal-case text-slate-500">No charges yet.</div>
+                ) : null}
+              </div>
             </div>
           </section>
         </div>
