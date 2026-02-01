@@ -106,7 +106,7 @@ export const AdminDashboard = () => {
   const [chargeMessage, setChargeMessage] = useState<string | null>(null)
   const [chargeStatus, setChargeStatus] = useState<'success' | 'error' | null>(null)
 
-  const [importTab, setImportTab] = useState<'Units' | 'Leases' | 'Charges'>('Units')
+  const [importTab, setImportTab] = useState<'units' | 'leases' | 'charges'>('units')
   const [importFile, setImportFile] = useState<File | null>(null)
   const [importMessage, setImportMessage] = useState<string | null>(null)
   const [importStatus, setImportStatus] = useState<'success' | 'error' | null>(null)
@@ -675,7 +675,7 @@ export const AdminDashboard = () => {
                 </select>
                 <DatePicker
                   selected={leaseForm.start_date}
-                  onChange={(date) => date && setLeaseForm((prev) => ({ ...prev, start_date: date }))}
+                  onChange={(date: Date | null) => date && setLeaseForm((prev) => ({ ...prev, start_date: date }))}
                   dateFormat="MM/dd/yyyy"
                   className="w-full"
                 />
@@ -726,7 +726,7 @@ export const AdminDashboard = () => {
               <div className="grid grid-cols-2 gap-3">
                 <DatePicker
                   selected={chargeForm.due_date}
-                  onChange={(date) => date && setChargeForm((prev) => ({ ...prev, due_date: date }))}
+                  onChange={(date: Date | null) => date && setChargeForm((prev) => ({ ...prev, due_date: date }))}
                   dateFormat="MM/dd/yyyy"
                   className="w-full"
                 />
@@ -759,14 +759,14 @@ export const AdminDashboard = () => {
           <section id="imports" className="card p-6">
             <h3 className="font-display text-xl">CSV Import</h3>
             <div className="mt-4 flex gap-2">
-              {(['Units', 'Leases', 'Charges'] as const).map((tab) => (
+              {(['units', 'leases', 'charges'] as const).map((tab) => (
                 <button
                   key={tab}
                   type="button"
                   onClick={() => setImportTab(tab)}
                   className={`btn text-xs ${importTab === tab ? 'btn-primary' : 'btn-ghost'}`}
                 >
-                  {tab}
+                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
                 </button>
               ))}
             </div>
