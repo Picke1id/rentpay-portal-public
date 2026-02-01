@@ -19,6 +19,10 @@ import {
 } from '../api/queries'
 import { AppLayout } from '../components/AppLayout'
 import { Button } from '../components/Button'
+import { Alert } from '../components/Alert'
+import { StatusBadge } from '../components/StatusBadge'
+import { formatCurrencyInput, formatDisplayDate, formatMoney, normalizeCurrencyInput } from '../utils/format'
+import { getErrorMessage } from '../utils/http'
 
 const leaseSchema = z.object({
   unit_id: z.coerce.number().min(1),
@@ -27,34 +31,6 @@ const leaseSchema = z.object({
   due_day: z.coerce.number().min(1).max(28),
   start_date: z.string().min(10),
 })
-
-const currency = (amount: number) =>
-  `$${(amount / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-
-const normalizeCurrencyInput = (value: string) => value.replace(/,/g, '').trim()
-
-const formatCurrencyInput = (value: string) => {
-  const numeric = Number.parseFloat(normalizeCurrencyInput(value))
-  if (Number.isNaN(numeric)) return value
-  return numeric.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-}
-
-const formatDisplayDate = (value?: string | null) => {
-  if (!value) return '—'
-  const isoMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})/)
-  if (isoMatch) {
-    const [, year, month, day] = isoMatch
-    return `${month}/${day}/${year}`
-  }
-  const mdYMatch = value.match(/^(\d{2})-(\d{2})-(\d{4})$/)
-  if (mdYMatch) {
-    const [, month, day, year] = mdYMatch
-    return `${month}/${day}/${year}`
-  }
-  const mdYSlashMatch = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/)
-  if (mdYSlashMatch) return value
-  return value
-}
 
 const downloadTemplate = (tab: 'units' | 'leases' | 'charges') => {
   const headers: Record<typeof tab, string> = {
@@ -179,8 +155,8 @@ export const AdminDashboard = () => {
       setPropertyStatus('success')
       queryClient.invalidateQueries({ queryKey: ['admin', 'properties'] })
     },
-    onError: (error: any) => {
-      setPropertyMessage(error?.response?.data?.message || 'Failed to create property.')
+    onError: (error: unknown) => {
+      setPropertyMessage(getErrorMessage(error, 'Failed to create property.'))
       setPropertyStatus('error')
     },
   })
@@ -193,8 +169,8 @@ export const AdminDashboard = () => {
       setUnitStatus('success')
       queryClient.invalidateQueries({ queryKey: ['admin', 'units'] })
     },
-    onError: (error: any) => {
-      setUnitMessage(error?.response?.data?.message || 'Failed to create unit.')
+    onError: (error: unknown) => {
+      setUnitMessage(getErrorMessage(error, 'Failed to create unit.'))
       setUnitStatus('error')
     },
   })
@@ -223,8 +199,8 @@ export const AdminDashboard = () => {
       setLeaseStatus('success')
       queryClient.invalidateQueries({ queryKey: ['admin', 'leases'] })
     },
-    onError: (error: any) => {
-      setLeaseMessage(error?.response?.data?.message || 'Failed to create lease.')
+    onError: (error: unknown) => {
+      setLeaseMessage(getErrorMessage(error, 'Failed to create lease.'))
       setLeaseStatus('error')
     },
   })
@@ -237,8 +213,8 @@ export const AdminDashboard = () => {
       setChargeForm((prev) => ({ ...prev, amount: '' }))
       queryClient.invalidateQueries({ queryKey: ['admin', 'charges'] })
     },
-    onError: (error: any) => {
-      setChargeMessage(error?.response?.data?.message || 'Failed to create charge.')
+    onError: (error: unknown) => {
+      setChargeMessage(getErrorMessage(error, 'Failed to create charge.'))
       setChargeStatus('error')
     },
   })
@@ -252,8 +228,9 @@ export const AdminDashboard = () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'leases'] })
       queryClient.invalidateQueries({ queryKey: ['admin', 'charges'] })
     },
-    onError: (error: any) => {
-      const errorList = error?.response?.data?.errors as Array<{ row: number; errors: string[] }> | undefined
+    onError: (error: unknown) => {
+      const errorList = (error as { response?: { data?: { errors?: Array<{ row: number; errors: string[] }> } } }).response?.data
+        ?.errors as Array<{ row: number; errors: string[] }> | undefined
       if (errorList && errorList.length > 0) {
         const topErrors = errorList.slice(0, 3).map((item) => `Row ${item.row}: ${item.errors[0]}`)
         setImportMessage(topErrors.join(' • '))
@@ -496,7 +473,7 @@ export const AdminDashboard = () => {
                 <div key={lease.id} className="grid grid-cols-4 gap-3 border-b border-stone py-2 text-sm normal-case text-slate-700">
                   <span>{lease.unit?.name ?? lease.unit_id}</span>
                   <span>{lease.tenant?.name ?? lease.tenant_user_id}</span>
-                  <span>{currency(lease.rent_amount)}</span>
+                  <span>{formatMoney(lease.rent_amount)}</span>
                   <span>{formatDisplayDate(lease.start_date)}</span>
                 </div>
               ))}
@@ -522,18 +499,8 @@ export const AdminDashboard = () => {
                 <div key={charge.id} className="grid grid-cols-4 gap-3 border-b border-stone py-2 text-sm normal-case text-slate-700">
                   <span>{charge.unit ?? '—'}</span>
                   <span>{charge.tenant ?? '—'}</span>
-                  <span>{currency(charge.amount)}</span>
-                  <span
-                    className={`inline-flex w-fit justify-self-start rounded-full px-2 py-0.5 text-xs font-semibold capitalize ${
-                      charge.status === 'paid'
-                        ? 'bg-emerald-50 text-emerald-700'
-                        : charge.status === 'due'
-                          ? 'bg-red-50 text-red-700'
-                          : 'bg-slate-100 text-slate-700'
-                    }`}
-                  >
-                    {charge.status}
-                  </span>
+                  <span>{formatMoney(charge.amount)}</span>
+                  <StatusBadge status={charge.status} />
                 </div>
               ))}
               {chargesQuery.data?.length === 0 ? (
@@ -566,15 +533,7 @@ export const AdminDashboard = () => {
               </Button>
             </form>
             {propertyMessage ? (
-              <div
-                className={`mt-3 rounded-xl px-4 py-3 text-sm font-semibold ${
-                  propertyStatus === 'error'
-                    ? 'bg-red-50 text-red-700'
-                    : 'bg-emerald-50 text-emerald-700'
-                }`}
-              >
-                {propertyMessage}
-              </div>
+              <Alert type={propertyStatus === 'error' ? 'error' : 'success'} message={propertyMessage} className="mt-3" />
             ) : null}
           </section>
 
@@ -618,15 +577,7 @@ export const AdminDashboard = () => {
               </Button>
             </form>
             {unitMessage ? (
-              <div
-                className={`mt-3 rounded-xl px-4 py-3 text-sm font-semibold ${
-                  unitStatus === 'error'
-                    ? 'bg-red-50 text-red-700'
-                    : 'bg-emerald-50 text-emerald-700'
-                }`}
-              >
-                {unitMessage}
-              </div>
+              <Alert type={unitStatus === 'error' ? 'error' : 'success'} message={unitMessage} className="mt-3" />
             ) : null}
           </section>
 
@@ -684,15 +635,7 @@ export const AdminDashboard = () => {
                 {leaseMutation.isPending ? 'Creating...' : 'Create Lease'}
               </Button>
               {leaseMessage ? (
-                <div
-                  className={`rounded-xl px-4 py-3 text-sm font-semibold ${
-                    leaseStatus === 'error'
-                      ? 'bg-red-50 text-red-700'
-                      : 'bg-emerald-50 text-emerald-700'
-                  }`}
-                >
-                  {leaseMessage}
-                </div>
+                <Alert type={leaseStatus === 'error' ? 'error' : 'success'} message={leaseMessage} />
               ) : null}
             </form>
           </section>
@@ -743,15 +686,7 @@ export const AdminDashboard = () => {
                 {chargeMutation.isPending ? 'Saving...' : 'Add Charge'}
               </Button>
               {chargeMessage ? (
-                <div
-                  className={`rounded-xl px-4 py-3 text-sm font-semibold ${
-                    chargeStatus === 'error'
-                      ? 'bg-red-50 text-red-700'
-                      : 'bg-emerald-50 text-emerald-700'
-                  }`}
-                >
-                  {chargeMessage}
-                </div>
+                <Alert type={chargeStatus === 'error' ? 'error' : 'success'} message={chargeMessage} />
               ) : null}
             </form>
           </section>

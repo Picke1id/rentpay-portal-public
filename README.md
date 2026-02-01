@@ -15,6 +15,11 @@ Full-stack rent payment MVP demo built with **Laravel + React (Vite) + Stripe (t
 - **Backend:** Laravel 12, Sanctum, MySQL, Stripe PHP
 - **Frontend:** React + TypeScript, Vite, React Query, Axios, Zod, Tailwind CSS
 
+## Architecture Notes
+- Role-based access (admin vs tenant) enforced with policies + Sanctum
+- Stripe payments finalized via webhooks only
+- CSV imports validated with ownership checks and row limits
+
 ## Demo Accounts
 Seeded credentials (via `php artisan db:seed`):
 
@@ -90,6 +95,10 @@ Any future date / Any CVC / Any ZIP
 # Backend tests
 cd rentpay-api
 php artisan test
+
+# Frontend lint
+cd rentpay-web
+npm run lint
 
 # Vite dev server
 cd rentpay-web

@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../state/AuthContext'
 import { Button } from '../components/Button'
+import { getErrorMessage } from '../utils/http'
 
 const schema = z.object({
   email: z.string().email(),
@@ -30,8 +31,8 @@ export const LoginPage = () => {
       setLoading(true)
       const user = await login(form.email, form.password)
       navigate(user.role === 'admin' ? '/admin' : '/tenant')
-    } catch (e: any) {
-      setError(e?.response?.data?.message || 'Login failed. Check credentials.')
+    } catch (e: unknown) {
+      setError(getErrorMessage(e, 'Login failed. Check credentials.'))
     } finally {
       setLoading(false)
     }
