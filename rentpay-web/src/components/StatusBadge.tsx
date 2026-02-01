@@ -11,7 +11,7 @@ const styles: Record<StatusVariant, string> = {
 
 export const StatusBadge = ({ status }: { status: StatusVariant }) => {
   return (
-    <span className={`inline-flex w-fit justify-self-start rounded-full px-2 py-0.5 text-xs font-semibold capitalize ${styles[status]}`}>
+    <span className={`inline-flex w-fit items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold capitalize ${styles[status]}`}>
       {status}
     </span>
   )
