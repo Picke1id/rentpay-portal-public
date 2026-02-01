@@ -94,7 +94,7 @@ export const AdminDashboard = () => {
   const [chargeMessage, setChargeMessage] = useState<string | null>(null)
   const [chargeStatus, setChargeStatus] = useState<'success' | 'error' | null>(null)
 
-  const [importTab, setImportTab] = useState<'units' | 'leases' | 'charges'>('units')
+  const [importTab, setImportTab] = useState<'Units' | 'Leases' | 'Charges'>('Units')
   const [importFile, setImportFile] = useState<File | null>(null)
   const [importMessage, setImportMessage] = useState<string | null>(null)
   const [importStatus, setImportStatus] = useState<'success' | 'error' | null>(null)
@@ -425,7 +425,7 @@ export const AdminDashboard = () => {
 
         <div className="flex flex-col gap-6">
           <section id="properties" className="card p-6">
-            <h3 className="font-display text-xl">Create property</h3>
+            <h3 className="font-display text-xl">Create Property</h3>
             <form
               className="mt-4 flex gap-3"
               onSubmit={(event) => {
@@ -459,7 +459,7 @@ export const AdminDashboard = () => {
           </section>
 
           <section className="card p-6">
-            <h3 className="font-display text-xl">Add unit</h3>
+            <h3 className="font-display text-xl">Add Unit</h3>
             <form
               className="mt-4 grid gap-3"
               onSubmit={(event) => {
@@ -494,7 +494,7 @@ export const AdminDashboard = () => {
                 onChange={(event) => setUnitForm((prev) => ({ ...prev, notes: event.target.value }))}
               />
               <Button type="submit" className="btn-primary" disabled={unitMutation.isPending}>
-                Add unit
+                Add Unit
               </Button>
             </form>
             {unitMessage ? (
@@ -511,7 +511,7 @@ export const AdminDashboard = () => {
           </section>
 
           <section className="card p-6">
-            <h3 className="font-display text-xl">Create lease</h3>
+            <h3 className="font-display text-xl">Create Lease</h3>
             <form className="mt-4 grid gap-3" onSubmit={submitLease}>
               <select
                 value={leaseForm.unit_id}
@@ -558,7 +558,7 @@ export const AdminDashboard = () => {
                 />
               </div>
               <Button type="submit" className="btn-primary" disabled={leaseMutation.isPending}>
-                {leaseMutation.isPending ? 'Creating...' : 'Create lease'}
+                {leaseMutation.isPending ? 'Creating...' : 'Create Lease'}
               </Button>
               {leaseMessage ? (
                 <div
@@ -575,7 +575,7 @@ export const AdminDashboard = () => {
           </section>
 
           <section className="card p-6">
-            <h3 className="font-display text-xl">Add charge</h3>
+            <h3 className="font-display text-xl">Add Charge</h3>
             <form className="mt-4 grid gap-3" onSubmit={submitCharge}>
               <select
                 value={chargeForm.lease_id}
@@ -614,7 +614,7 @@ export const AdminDashboard = () => {
                 </select>
               </div>
               <Button type="submit" className="btn-primary" disabled={chargeMutation.isPending}>
-                {chargeMutation.isPending ? 'Saving...' : 'Add charge'}
+                {chargeMutation.isPending ? 'Saving...' : 'Add Charge'}
               </Button>
               {chargeMessage ? (
                 <div
@@ -631,9 +631,9 @@ export const AdminDashboard = () => {
           </section>
 
           <section id="imports" className="card p-6">
-            <h3 className="font-display text-xl">CSV import</h3>
+            <h3 className="font-display text-xl">CSV Import</h3>
             <div className="mt-4 flex gap-2">
-              {(['units', 'leases', 'charges'] as const).map((tab) => (
+              {(['Units', 'Leases', 'Charges'] as const).map((tab) => (
                 <button
                   key={tab}
                   type="button"
@@ -646,7 +646,7 @@ export const AdminDashboard = () => {
             </div>
             <div className="mt-4 grid gap-3">
               <Button className="btn-ghost" onClick={() => downloadTemplate(importTab)}>
-                Download template
+                Download Template
               </Button>
               <label className="flex flex-col gap-2 rounded-xl border border-dashed border-stone bg-white p-4 text-sm text-slate-500">
                 Drag & drop CSV here, or browse
