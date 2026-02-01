@@ -27,7 +27,16 @@ const leaseSchema = z.object({
   start_date: z.string().min(10),
 })
 
-const currency = (amount: number) => `$${(amount / 100).toFixed(2)}`
+const currency = (amount: number) =>
+  `$${(amount / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+
+const normalizeCurrencyInput = (value: string) => value.replace(/,/g, '').trim()
+
+const formatCurrencyInput = (value: string) => {
+  const numeric = Number.parseFloat(normalizeCurrencyInput(value))
+  if (Number.isNaN(numeric)) return value
+  return numeric.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
 
 const formatDisplayDate = (value?: string | null) => {
   if (!value) return '—'
@@ -238,7 +247,7 @@ export const AdminDashboard = () => {
 
     const parsed = leaseSchema.safeParse({
       ...leaseForm,
-      rent_amount: Number(parseFloat(leaseForm.rent_amount) * 100),
+      rent_amount: Number(parseFloat(normalizeCurrencyInput(leaseForm.rent_amount)) * 100),
       start_date: leaseForm.start_date.toISOString().slice(0, 10),
     })
 
@@ -250,7 +259,7 @@ export const AdminDashboard = () => {
     leaseMutation.mutate({
       unit_id: Number(leaseForm.unit_id),
       tenant_user_id: Number(leaseForm.tenant_user_id),
-      rent_amount: Number(parseFloat(leaseForm.rent_amount) * 100),
+      rent_amount: Number(parseFloat(normalizeCurrencyInput(leaseForm.rent_amount)) * 100),
       due_day: Number(leaseForm.due_day),
       start_date: leaseForm.start_date.toISOString().slice(0, 10),
     })
@@ -270,7 +279,7 @@ export const AdminDashboard = () => {
 
     chargeMutation.mutate({
       lease_id: Number(chargeForm.lease_id),
-      amount: Math.round(amountValue * 100),
+      amount: Math.round(Number.parseFloat(normalizeCurrencyInput(chargeForm.amount)) * 100),
       due_date: chargeForm.due_date.toISOString().slice(0, 10),
       status: chargeForm.status as 'due' | 'paid' | 'void',
     })
@@ -538,6 +547,9 @@ export const AdminDashboard = () => {
                 <input
                   value={leaseForm.rent_amount}
                   onChange={(event) => setLeaseForm((prev) => ({ ...prev, rent_amount: event.target.value }))}
+                  onBlur={(event) =>
+                    setLeaseForm((prev) => ({ ...prev, rent_amount: formatCurrencyInput(event.target.value) }))
+                  }
                 />
                 <p className="text-xs text-slate-400">Stored in cents internally.</p>
               </div>
@@ -594,6 +606,9 @@ export const AdminDashboard = () => {
                   value={chargeForm.amount}
                   onChange={(event) => setChargeForm((prev) => ({ ...prev, amount: event.target.value }))}
                   placeholder="e.g. 1500.00"
+                  onBlur={(event) =>
+                    setChargeForm((prev) => ({ ...prev, amount: formatCurrencyInput(event.target.value) }))
+                  }
                 />
                 <p className="text-xs text-slate-400">Stored in cents internally.</p>
               </div>
