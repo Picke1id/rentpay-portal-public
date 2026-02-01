@@ -74,6 +74,7 @@ export const LoginPage = () => {
         <div className="text-xs text-slate-500">
           <p>Demo admin: admin@rentpay.test / password</p>
           <p>Demo tenant: tenant@rentpay.test / password</p>
+          <p>API: {import.meta.env.VITE_API_URL || 'not set'}</p>
         </div>
       </div>
       <div className="flex items-center justify-center">

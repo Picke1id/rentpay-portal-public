@@ -25,7 +25,7 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
   const links = user?.role === 'admin' ? adminLinks : tenantLinks
 
   return (
-    <div className="min-h-screen bg-sand overflow-x-hidden">
+    <div className="min-h-screen bg-sand">
       <header className="w-full border-b border-stone/60 bg-white">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">

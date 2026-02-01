@@ -54,31 +54,19 @@ export const TenantDashboard = () => {
         </div>
         {checkoutError ? <Alert type="error" message={checkoutError} className="mb-4" /> : null}
         <div className="grid gap-3">
-          <div className="hidden grid-cols-4 gap-3 border-b border-stone pb-2 text-xs uppercase tracking-[0.2em] text-slate-400 md:grid">
+          <div className="grid grid-cols-4 gap-3 border-b border-stone pb-2 text-xs uppercase tracking-[0.2em] text-slate-400">
             <span>Due date</span>
             <span>Amount</span>
             <span>Status</span>
             <span />
           </div>
           {(chargesQuery.data ?? []).map((charge) => (
-            <div
-              className="grid gap-3 border-b border-stone py-3 text-sm text-slate-700 md:grid-cols-4 md:items-center"
-              key={charge.id}
-            >
-              <div className="flex items-center justify-between md:block">
-                <span className="text-xs uppercase tracking-[0.2em] text-slate-400 md:hidden">Due date</span>
-                <span>{formatDisplayDate(charge.due_date)}</span>
-              </div>
-              <div className="flex items-center justify-between md:block">
-                <span className="text-xs uppercase tracking-[0.2em] text-slate-400 md:hidden">Amount</span>
-                <span>{formatMoney(charge.amount)}</span>
-              </div>
-              <div className="flex items-center justify-between md:block">
-                <span className="text-xs uppercase tracking-[0.2em] text-slate-400 md:hidden">Status</span>
-                <StatusBadge status={charge.status} />
-              </div>
+            <div className="grid grid-cols-4 items-center gap-3 border-b border-stone py-2 text-sm text-slate-700" key={charge.id}>
+              <span>{formatDisplayDate(charge.due_date)}</span>
+              <span>{formatMoney(charge.amount)}</span>
+              <StatusBadge status={charge.status} />
               <Button
-                className="btn-primary w-full md:w-auto"
+                className="btn-primary"
                 onClick={() => {
                   setCheckoutError(null)
                   checkoutMutation.mutate(charge.id)

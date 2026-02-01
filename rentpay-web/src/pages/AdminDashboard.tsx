@@ -324,130 +324,148 @@ export const AdminDashboard = () => {
               </div>
             </div>
             <div className="mt-4 overflow-x-auto">
-              <div className="min-w-[560px] grid gap-2 text-xs uppercase tracking-[0.08em] text-slate-400">
-                <div className="grid grid-cols-[1.2fr_1.2fr_1.4fr_140px] gap-3">
-                  <span>Unit</span>
-                  <span>Property</span>
-                  <span>Notes</span>
-                  <span className="text-center">Actions</span>
-                </div>
-                {filteredUnits.map((unit) => (
-                  <div key={unit.id} className="grid grid-cols-[1.2fr_1.2fr_1.4fr_140px] items-center gap-3 border-b border-stone py-2 text-sm normal-case text-slate-700">
-                  {editingUnitId === unit.id ? (
-                    <>
-                      <input
-                        value={editUnitForm.name}
-                        onChange={(event) => setEditUnitForm((prev) => ({ ...prev, name: event.target.value }))}
-                      />
-                      <select
-                        value={editUnitForm.property_id}
-                        onChange={(event) => setEditUnitForm((prev) => ({ ...prev, property_id: event.target.value }))}
-                      >
-                        <option value="">Property</option>
-                        {(propertiesQuery.data ?? []).map((property) => (
-                          <option key={property.id} value={property.id}>{property.name}</option>
-                        ))}
-                      </select>
-                      <input
-                        value={editUnitForm.notes}
-                        onChange={(event) => setEditUnitForm((prev) => ({ ...prev, notes: event.target.value }))}
-                        placeholder="Notes"
-                      />
-                      <div className="flex items-center justify-center gap-2">
-                        <button
-                          className="inline-flex h-8 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100"
-                          onClick={() => {
-                            if (!editUnitForm.property_id || !editUnitForm.name) return
-                            updateUnitMutation.mutate({
-                              unitId: unit.id,
-                              payload: {
-                                property_id: Number(editUnitForm.property_id),
-                                name: editUnitForm.name,
-                                notes: editUnitForm.notes || undefined,
-                              },
-                            })
-                          }}
-                        >
-                          Save
-                        </button>
-                        <button
-                          className="inline-flex h-8 items-center justify-center rounded-lg border border-stone bg-white px-3 text-xs font-semibold text-slate-600 hover:bg-stone/40"
-                          onClick={() => {
-                            setEditingUnitId(null)
-                            setEditUnitForm({ property_id: '', name: '', notes: '' })
-                          }}
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <span>{unit.name}</span>
-                      <span>{unit.property?.name ?? '—'}</span>
-                      <span>{unit.notes ?? '—'}</span>
-                      <div className="flex items-center justify-center gap-2">
-                        <button
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-stone bg-white text-slate-500 transition hover:bg-stone/40"
-                          onClick={() => {
-                            setEditingUnitId(unit.id)
-                            setEditUnitForm({
-                              property_id: String(unit.property_id),
-                              name: unit.name,
-                              notes: unit.notes ?? '',
-                            })
-                          }}
-                          aria-label="Edit unit"
-                        >
-                          <svg
-                            viewBox="0 0 24 24"
-                            aria-hidden="true"
-                            className="h-4 w-4"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="1.8"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <path d="M12 20h9" />
-                            <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
-                          </svg>
-                        </button>
-                        <button
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-600 transition hover:bg-red-100"
-                          onClick={() => {
-                            if (confirm('Remove this unit?')) {
-                              deleteUnitMutation.mutate(unit.id)
-                            }
-                          }}
-                          aria-label="Remove unit"
-                        >
-                          <svg
-                            viewBox="0 0 24 24"
-                            aria-hidden="true"
-                            className="h-4 w-4"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="1.8"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <path d="M3 6h18" />
-                            <path d="M8 6V4h8v2" />
-                            <path d="M7 6l1 14h8l1-14" />
-                            <path d="M10 11v6" />
-                            <path d="M14 11v6" />
-                          </svg>
-                        </button>
-                      </div>
-                    </>
-                  )}
-                  </div>
-                ))}
-                {filteredUnits.length === 0 ? (
-                  <div className="rounded-xl bg-stone/40 p-4 text-sm normal-case text-slate-500">No units yet. Add one →</div>
-                ) : null}
-              </div>
+              <table className="min-w-[560px] w-full text-sm">
+                <thead>
+                  <tr className="text-xs uppercase tracking-[0.08em] text-slate-400">
+                    <th className="px-2 py-2 text-left font-semibold">Unit</th>
+                    <th className="px-2 py-2 text-left font-semibold">Property</th>
+                    <th className="px-2 py-2 text-left font-semibold">Notes</th>
+                    <th className="px-2 py-2 text-center font-semibold">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredUnits.map((unit) => (
+                    <tr key={unit.id} className="border-b border-stone text-slate-700">
+                      {editingUnitId === unit.id ? (
+                        <>
+                          <td className="px-2 py-2">
+                            <input
+                              value={editUnitForm.name}
+                              onChange={(event) => setEditUnitForm((prev) => ({ ...prev, name: event.target.value }))}
+                            />
+                          </td>
+                          <td className="px-2 py-2">
+                            <select
+                              value={editUnitForm.property_id}
+                              onChange={(event) => setEditUnitForm((prev) => ({ ...prev, property_id: event.target.value }))}
+                            >
+                              <option value="">Property</option>
+                              {(propertiesQuery.data ?? []).map((property) => (
+                                <option key={property.id} value={property.id}>{property.name}</option>
+                              ))}
+                            </select>
+                          </td>
+                          <td className="px-2 py-2">
+                            <input
+                              value={editUnitForm.notes}
+                              onChange={(event) => setEditUnitForm((prev) => ({ ...prev, notes: event.target.value }))}
+                              placeholder="Notes"
+                            />
+                          </td>
+                          <td className="px-2 py-2">
+                            <div className="flex items-center justify-center gap-2">
+                              <button
+                                className="inline-flex h-8 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100"
+                                onClick={() => {
+                                  if (!editUnitForm.property_id || !editUnitForm.name) return
+                                  updateUnitMutation.mutate({
+                                    unitId: unit.id,
+                                    payload: {
+                                      property_id: Number(editUnitForm.property_id),
+                                      name: editUnitForm.name,
+                                      notes: editUnitForm.notes || undefined,
+                                    },
+                                  })
+                                }}
+                              >
+                                Save
+                              </button>
+                              <button
+                                className="inline-flex h-8 items-center justify-center rounded-lg border border-stone bg-white px-3 text-xs font-semibold text-slate-600 hover:bg-stone/40"
+                                onClick={() => {
+                                  setEditingUnitId(null)
+                                  setEditUnitForm({ property_id: '', name: '', notes: '' })
+                                }}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </td>
+                        </>
+                      ) : (
+                        <>
+                          <td className="px-2 py-2">{unit.name}</td>
+                          <td className="px-2 py-2">{unit.property?.name ?? '—'}</td>
+                          <td className="px-2 py-2">{unit.notes ?? '—'}</td>
+                          <td className="px-2 py-2">
+                            <div className="flex items-center justify-center gap-2">
+                              <button
+                                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-stone bg-white text-slate-500 transition hover:bg-stone/40"
+                                onClick={() => {
+                                  setEditingUnitId(unit.id)
+                                  setEditUnitForm({
+                                    property_id: String(unit.property_id),
+                                    name: unit.name,
+                                    notes: unit.notes ?? '',
+                                  })
+                                }}
+                                aria-label="Edit unit"
+                              >
+                                <svg
+                                  viewBox="0 0 24 24"
+                                  aria-hidden="true"
+                                  className="h-4 w-4"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="1.8"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                >
+                                  <path d="M12 20h9" />
+                                  <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+                                </svg>
+                              </button>
+                              <button
+                                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-600 transition hover:bg-red-100"
+                                onClick={() => {
+                                  if (confirm('Remove this unit?')) {
+                                    deleteUnitMutation.mutate(unit.id)
+                                  }
+                                }}
+                                aria-label="Remove unit"
+                              >
+                                <svg
+                                  viewBox="0 0 24 24"
+                                  aria-hidden="true"
+                                  className="h-4 w-4"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="1.8"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                >
+                                  <path d="M3 6h18" />
+                                  <path d="M8 6V4h8v2" />
+                                  <path d="M7 6l1 14h8l1-14" />
+                                  <path d="M10 11v6" />
+                                  <path d="M14 11v6" />
+                                </svg>
+                              </button>
+                            </div>
+                          </td>
+                        </>
+                      )}
+                    </tr>
+                  ))}
+                  {filteredUnits.length === 0 ? (
+                    <tr>
+                      <td className="px-2 py-3 text-sm text-slate-500" colSpan={4}>
+                        <div className="rounded-xl bg-stone/40 p-4">No units yet. Add one →</div>
+                      </td>
+                    </tr>
+                  ) : null}
+                </tbody>
+              </table>
             </div>
           </section>
 
@@ -465,25 +483,33 @@ export const AdminDashboard = () => {
               </div>
             </div>
             <div className="mt-4 overflow-x-auto">
-              <div className="min-w-[520px] grid gap-2 text-xs uppercase tracking-[0.08em] text-slate-400">
-                <div className="grid grid-cols-4 gap-3">
-                  <span>Unit</span>
-                  <span>Tenant</span>
-                  <span>Rent</span>
-                  <span>Start</span>
-                </div>
-                {filteredLeases.map((lease) => (
-                  <div key={lease.id} className="grid grid-cols-4 gap-3 border-b border-stone py-2 text-sm normal-case text-slate-700">
-                    <span>{lease.unit?.name ?? lease.unit_id}</span>
-                    <span>{lease.tenant?.name ?? lease.tenant_user_id}</span>
-                    <span>{formatMoney(lease.rent_amount)}</span>
-                    <span>{formatDisplayDate(lease.start_date)}</span>
-                  </div>
-                ))}
-                {filteredLeases.length === 0 ? (
-                  <div className="rounded-xl bg-stone/40 p-4 text-sm normal-case text-slate-500">No leases yet.</div>
-                ) : null}
-              </div>
+              <table className="min-w-[520px] w-full text-sm">
+                <thead>
+                  <tr className="text-xs uppercase tracking-[0.08em] text-slate-400">
+                    <th className="px-2 py-2 text-left font-semibold">Unit</th>
+                    <th className="px-2 py-2 text-left font-semibold">Tenant</th>
+                    <th className="px-2 py-2 text-left font-semibold">Rent</th>
+                    <th className="px-2 py-2 text-left font-semibold">Start</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredLeases.map((lease) => (
+                    <tr key={lease.id} className="border-b border-stone text-slate-700">
+                      <td className="px-2 py-2">{lease.unit?.name ?? lease.unit_id}</td>
+                      <td className="px-2 py-2">{lease.tenant?.name ?? lease.tenant_user_id}</td>
+                      <td className="px-2 py-2">{formatMoney(lease.rent_amount)}</td>
+                      <td className="px-2 py-2">{formatDisplayDate(lease.start_date)}</td>
+                    </tr>
+                  ))}
+                  {filteredLeases.length === 0 ? (
+                    <tr>
+                      <td className="px-2 py-3 text-sm text-slate-500" colSpan={4}>
+                        <div className="rounded-xl bg-stone/40 p-4">No leases yet.</div>
+                      </td>
+                    </tr>
+                  ) : null}
+                </tbody>
+              </table>
             </div>
           </section>
 
@@ -493,25 +519,35 @@ export const AdminDashboard = () => {
               <span className="text-sm text-slate-400">{chargesQuery.data?.length ?? 0} total</span>
             </div>
             <div className="mt-4 overflow-x-auto">
-              <div className="min-w-[520px] grid gap-2 text-xs uppercase tracking-[0.08em] text-slate-400">
-                <div className="grid grid-cols-4 gap-3">
-                  <span>Unit</span>
-                  <span>Tenant</span>
-                  <span>Amount</span>
-                  <span>Status</span>
-                </div>
-                {(chargesQuery.data ?? []).map((charge) => (
-                  <div key={charge.id} className="grid grid-cols-4 gap-3 border-b border-stone py-2 text-sm normal-case text-slate-700">
-                    <span>{charge.unit ?? '—'}</span>
-                    <span>{charge.tenant ?? '—'}</span>
-                    <span>{formatMoney(charge.amount)}</span>
-                    <StatusBadge status={charge.status} />
-                  </div>
-                ))}
-                {chargesQuery.data?.length === 0 ? (
-                  <div className="rounded-xl bg-stone/40 p-4 text-sm normal-case text-slate-500">No charges yet.</div>
-                ) : null}
-              </div>
+              <table className="min-w-[520px] w-full text-sm">
+                <thead>
+                  <tr className="text-xs uppercase tracking-[0.08em] text-slate-400">
+                    <th className="px-2 py-2 text-left font-semibold">Unit</th>
+                    <th className="px-2 py-2 text-left font-semibold">Tenant</th>
+                    <th className="px-2 py-2 text-left font-semibold">Amount</th>
+                    <th className="px-2 py-2 text-left font-semibold">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(chargesQuery.data ?? []).map((charge) => (
+                    <tr key={charge.id} className="border-b border-stone text-slate-700">
+                      <td className="px-2 py-2">{charge.unit ?? '—'}</td>
+                      <td className="px-2 py-2">{charge.tenant ?? '—'}</td>
+                      <td className="px-2 py-2">{formatMoney(charge.amount)}</td>
+                      <td className="px-2 py-2">
+                        <StatusBadge status={charge.status} />
+                      </td>
+                    </tr>
+                  ))}
+                  {chargesQuery.data?.length === 0 ? (
+                    <tr>
+                      <td className="px-2 py-3 text-sm text-slate-500" colSpan={4}>
+                        <div className="rounded-xl bg-stone/40 p-4">No charges yet.</div>
+                      </td>
+                    </tr>
+                  ) : null}
+                </tbody>
+              </table>
             </div>
           </section>
         </div>
