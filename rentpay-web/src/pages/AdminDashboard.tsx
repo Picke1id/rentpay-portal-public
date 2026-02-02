@@ -596,6 +596,7 @@ export const AdminDashboard = () => {
               }}
             >
               <select
+                className="w-full"
                 value={unitForm.property_id}
                 onChange={(event) => setUnitForm((prev) => ({ ...prev, property_id: event.target.value }))}
               >
@@ -627,6 +628,7 @@ export const AdminDashboard = () => {
             <h3 className="font-display text-xl">Create Lease</h3>
             <form className="mt-4 grid gap-3" onSubmit={submitLease}>
               <select
+                className="w-full"
                 value={leaseForm.unit_id}
                 onChange={(event) => setLeaseForm((prev) => ({ ...prev, unit_id: event.target.value }))}
               >
@@ -638,6 +640,7 @@ export const AdminDashboard = () => {
                 ))}
               </select>
               <select
+                className="w-full"
                 value={leaseForm.tenant_user_id}
                 onChange={(event) => setLeaseForm((prev) => ({ ...prev, tenant_user_id: event.target.value }))}
               >
@@ -659,6 +662,7 @@ export const AdminDashboard = () => {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <select
+                  className="w-full"
                   value={leaseForm.due_day}
                   onChange={(event) => setLeaseForm((prev) => ({ ...prev, due_day: event.target.value }))}
                 >
@@ -686,6 +690,7 @@ export const AdminDashboard = () => {
             <h3 className="font-display text-xl">Add Charge</h3>
             <form className="mt-4 grid gap-3" onSubmit={submitCharge}>
               <select
+                className="w-full"
                 value={chargeForm.lease_id}
                 onChange={(event) => setChargeForm((prev) => ({ ...prev, lease_id: event.target.value }))}
               >
@@ -716,6 +721,7 @@ export const AdminDashboard = () => {
                   className="w-full"
                 />
                 <select
+                  className="w-full"
                   value={chargeForm.status}
                   onChange={(event) => setChargeForm((prev) => ({ ...prev, status: event.target.value }))}
                 >

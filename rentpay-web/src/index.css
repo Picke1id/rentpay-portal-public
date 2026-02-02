@@ -13,9 +13,12 @@
     @apply font-sans bg-sand text-ink;
   }
 
-  input,
-  select {
+  input {
     @apply w-full rounded-xl border border-stone bg-white px-3 py-2 text-sm;
+  }
+
+  select {
+    @apply w-full appearance-none rounded-xl border border-stone bg-white px-3 py-2.5 text-sm leading-normal;
   }
 
   label {
