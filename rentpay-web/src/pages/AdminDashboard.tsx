@@ -470,17 +470,17 @@ export const AdminDashboard = () => {
           </section>
 
           <section id="leases" className="card p-6">
-            <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center justify-between gap-3">
               <h3 className="font-display text-xl">Leases</h3>
-              <div className="flex items-center gap-3">
-                <input
-                  className="w-48"
-                  placeholder="Search Leases"
-                  value={leaseSearch}
-                  onChange={(event) => setLeaseSearch(event.target.value)}
-                />
-                <span className="text-sm text-slate-400">{filteredLeases.length} total</span>
-              </div>
+              <span className="text-sm text-slate-400">{filteredLeases.length} total</span>
+            </div>
+            <div className="mt-3">
+              <input
+                className="w-full sm:w-48"
+                placeholder="Search Leases"
+                value={leaseSearch}
+                onChange={(event) => setLeaseSearch(event.target.value)}
+              />
             </div>
             <div className="mt-4 overflow-x-auto">
               <table className="min-w-[520px] w-full text-sm">
