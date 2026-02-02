@@ -40,6 +40,14 @@ export const LoginPage = () => {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#f7f2ee]">
+      <a
+        className="absolute right-6 top-6 z-10 text-xs font-semibold text-slate-600 underline decoration-slate-300 underline-offset-4 hover:text-slate-800"
+        href="https://www.linkedin.com/in/imari-pickens/"
+        target="_blank"
+        rel="noreferrer"
+      >
+        Designed by Imari Pickens
+      </a>
       <div className="pointer-events-none absolute -left-24 top-16 h-72 w-72 rounded-full bg-teal/30 blur-3xl" />
       <div className="pointer-events-none absolute right-0 top-0 h-96 w-96 -translate-y-1/3 rounded-full bg-accent/30 blur-3xl" />
       <div className="pointer-events-none absolute bottom-0 left-1/3 h-80 w-80 -translate-x-1/2 rounded-full bg-navy/20 blur-3xl" />

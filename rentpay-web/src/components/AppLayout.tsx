@@ -26,7 +26,15 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
 
   return (
     <div className="min-h-screen bg-sand">
-      <header className="w-full border-b border-stone/60 bg-white">
+      <header className="relative w-full border-b border-stone/60 bg-white">
+        <a
+          className="absolute right-6 top-4 hidden text-[10px] font-semibold text-slate-500 underline decoration-slate-300 underline-offset-4 hover:text-slate-700 lg:inline"
+          href="https://www.linkedin.com/in/imari-pickens/"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Designed by Imari Pickens
+        </a>
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
             <span className="inline-grid h-10 w-10 place-items-center rounded-2xl bg-navy font-display text-base font-bold text-white">RP</span>
@@ -61,8 +69,19 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
           </div>
         </aside>
         <main className="flex flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
-          <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+          <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6">
             {children}
+          </div>
+          <div className="mx-auto w-full max-w-6xl border-t border-stone/60 pt-4 text-xs text-slate-500 lg:hidden">
+            Designed by{' '}
+            <a
+              className="font-semibold text-slate-700 underline decoration-slate-300 underline-offset-4 hover:text-slate-900"
+              href="https://www.linkedin.com/in/imari-pickens/"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Imari Pickens
+            </a>
           </div>
         </main>
       </div>
