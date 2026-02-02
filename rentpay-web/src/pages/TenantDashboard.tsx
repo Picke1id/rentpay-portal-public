@@ -53,33 +53,47 @@ export const TenantDashboard = () => {
           <span className="text-sm text-slate-400">{chargesQuery.isLoading ? 'Loading...' : ''}</span>
         </div>
         {checkoutError ? <Alert type="error" message={checkoutError} className="mb-4" /> : null}
-        <div className="grid gap-3">
-          <div className="grid grid-cols-4 gap-3 border-b border-stone pb-2 text-xs uppercase tracking-[0.2em] text-slate-400">
-            <span>Due date</span>
-            <span>Amount</span>
-            <span>Status</span>
-            <span />
-          </div>
-          {(chargesQuery.data ?? []).map((charge) => (
-            <div className="grid grid-cols-4 items-center gap-3 border-b border-stone py-2 text-sm text-slate-700" key={charge.id}>
-              <span>{formatDisplayDate(charge.due_date)}</span>
-              <span>{formatMoney(charge.amount)}</span>
-              <StatusBadge status={charge.status} />
-              <Button
-                className="btn-primary"
-                onClick={() => {
-                  setCheckoutError(null)
-                  checkoutMutation.mutate(charge.id)
-                }}
-                disabled={checkoutMutation.isPending}
-              >
-                Pay now
-              </Button>
-            </div>
-          ))}
-          {chargesQuery.data?.length === 0 && !chargesQuery.isLoading ? (
-            <div className="rounded-xl bg-stone/40 p-4 text-sm text-slate-500">No charges due right now.</div>
-          ) : null}
+        <div className="overflow-x-auto">
+          <table className="min-w-[520px] w-full text-sm">
+            <thead>
+              <tr className="text-xs uppercase tracking-[0.2em] text-slate-400">
+                <th className="px-2 py-2 text-left font-semibold">Due date</th>
+                <th className="px-2 py-2 text-left font-semibold">Amount</th>
+                <th className="px-2 py-2 text-left font-semibold">Status</th>
+                <th className="px-2 py-2 text-right font-semibold">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(chargesQuery.data ?? []).map((charge) => (
+                <tr className="border-b border-stone text-slate-700" key={charge.id}>
+                  <td className="px-2 py-2">{formatDisplayDate(charge.due_date)}</td>
+                  <td className="px-2 py-2">{formatMoney(charge.amount)}</td>
+                  <td className="px-2 py-2">
+                    <StatusBadge status={charge.status} />
+                  </td>
+                  <td className="px-2 py-2 text-right">
+                    <Button
+                      className="btn-primary"
+                      onClick={() => {
+                        setCheckoutError(null)
+                        checkoutMutation.mutate(charge.id)
+                      }}
+                      disabled={checkoutMutation.isPending}
+                    >
+                      Pay now
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+              {chargesQuery.data?.length === 0 && !chargesQuery.isLoading ? (
+                <tr>
+                  <td className="px-2 py-3 text-sm text-slate-500" colSpan={4}>
+                    <div className="rounded-xl bg-stone/40 p-4">No charges due right now.</div>
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
         </div>
       </section>
 
@@ -87,22 +101,34 @@ export const TenantDashboard = () => {
         <div className="mb-4 flex items-center justify-between">
           <h3 className="font-display text-xl">Payment history</h3>
         </div>
-        <div className="grid gap-3">
-          <div className="grid grid-cols-3 gap-3 border-b border-stone pb-2 text-xs uppercase tracking-[0.2em] text-slate-400">
-            <span>Date</span>
-            <span>Amount</span>
-            <span>Status</span>
-          </div>
-          {(paymentsQuery.data ?? []).map((payment) => (
-            <div className="grid grid-cols-3 items-center gap-3 border-b border-stone py-2 text-sm text-slate-700" key={payment.id}>
-              <span>{formatDisplayDate(payment.paid_at ?? payment.created_at)}</span>
-              <span>{formatMoney(payment.amount)}</span>
-              <StatusBadge status={payment.status === 'succeeded' ? 'succeeded' : payment.status === 'failed' ? 'failed' : 'pending'} />
-            </div>
-          ))}
-          {paymentsQuery.data?.length === 0 && !paymentsQuery.isLoading ? (
-            <div className="rounded-xl bg-stone/40 p-4 text-sm text-slate-500">No payments recorded yet.</div>
-          ) : null}
+        <div className="overflow-x-auto">
+          <table className="min-w-[420px] w-full text-sm">
+            <thead>
+              <tr className="text-xs uppercase tracking-[0.2em] text-slate-400">
+                <th className="px-2 py-2 text-left font-semibold">Date</th>
+                <th className="px-2 py-2 text-left font-semibold">Amount</th>
+                <th className="px-2 py-2 text-left font-semibold">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(paymentsQuery.data ?? []).map((payment) => (
+                <tr className="border-b border-stone text-slate-700" key={payment.id}>
+                  <td className="px-2 py-2">{formatDisplayDate(payment.paid_at ?? payment.created_at)}</td>
+                  <td className="px-2 py-2">{formatMoney(payment.amount)}</td>
+                  <td className="px-2 py-2">
+                    <StatusBadge status={payment.status === 'succeeded' ? 'succeeded' : payment.status === 'failed' ? 'failed' : 'pending'} />
+                  </td>
+                </tr>
+              ))}
+              {paymentsQuery.data?.length === 0 && !paymentsQuery.isLoading ? (
+                <tr>
+                  <td className="px-2 py-3 text-sm text-slate-500" colSpan={3}>
+                    <div className="rounded-xl bg-stone/40 p-4">No payments recorded yet.</div>
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
         </div>
       </section>
     </AppLayout>
