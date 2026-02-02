@@ -14,11 +14,15 @@
   }
 
   input {
-    @apply w-full rounded-xl border border-stone bg-white px-3 py-2 text-sm;
+    @apply h-11 w-full rounded-xl border border-stone bg-white px-3 py-2 text-sm;
   }
 
   select {
-    @apply w-full appearance-none rounded-xl border border-stone bg-white px-3 py-2.5 text-sm leading-normal;
+    @apply h-11 w-full appearance-none rounded-xl border border-stone bg-white px-3 py-2.5 pr-10 text-sm leading-normal;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M6 8l4 4 4-4' stroke='%2394a3b8' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 12px 12px;
   }
 
   label {

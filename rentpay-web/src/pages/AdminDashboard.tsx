@@ -306,17 +306,17 @@ export const AdminDashboard = () => {
               <h3 className="font-display text-xl">Units</h3>
               <div className="flex flex-wrap items-center gap-3">
                 <input
-                  className="w-48"
-                  placeholder="Search units"
+                  className="w-full sm:w-48"
+                  placeholder="Search Units"
                   value={unitSearch}
                   onChange={(event) => setUnitSearch(event.target.value)}
                 />
                 <select
-                  className="w-44"
+                  className="w-full sm:w-44"
                   value={unitPropertyFilter}
                   onChange={(event) => setUnitPropertyFilter(event.target.value)}
                 >
-                  <option value="all">All properties</option>
+                  <option value="all">All Properties</option>
                   {(propertiesQuery.data ?? []).map((property) => (
                     <option key={property.id} value={property.id}>{property.name}</option>
                   ))}
@@ -475,7 +475,7 @@ export const AdminDashboard = () => {
               <div className="flex items-center gap-3">
                 <input
                   className="w-48"
-                  placeholder="Search leases"
+                  placeholder="Search Leases"
                   value={leaseSearch}
                   onChange={(event) => setLeaseSearch(event.target.value)}
                 />
@@ -566,7 +566,7 @@ export const AdminDashboard = () => {
               }}
             >
               <input
-                placeholder="Property name"
+                placeholder="Property Name"
                 value={propertyForm.name}
                 onChange={(event) => setPropertyForm({ name: event.target.value })}
               />
@@ -606,7 +606,7 @@ export const AdminDashboard = () => {
                 ))}
               </select>
               <input
-                placeholder="Unit name"
+                placeholder="Unit Name"
                 value={unitForm.name}
                 onChange={(event) => setUnitForm((prev) => ({ ...prev, name: event.target.value }))}
               />
@@ -674,7 +674,7 @@ export const AdminDashboard = () => {
                   selected={leaseForm.start_date}
                   onChange={(date: Date | null) => date && setLeaseForm((prev) => ({ ...prev, start_date: date }))}
                   dateFormat="MM/dd/yyyy"
-                  className="w-full"
+                  className="w-full h-11"
                 />
               </div>
               <Button type="submit" className="btn-primary" disabled={leaseMutation.isPending}>
@@ -718,7 +718,7 @@ export const AdminDashboard = () => {
                   selected={chargeForm.due_date}
                   onChange={(date: Date | null) => date && setChargeForm((prev) => ({ ...prev, due_date: date }))}
                   dateFormat="MM/dd/yyyy"
-                  className="w-full"
+                  className="w-full h-11"
                 />
                 <select
                   className="w-full"
