@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
+import { Analytics } from '@vercel/analytics/react'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
 import { TenantDashboard } from './pages/TenantDashboard'
@@ -10,30 +11,33 @@ import { NotFoundPage } from './pages/NotFoundPage'
 
 const App = () => {
   return (
-    <Routes>
-      <Route path="/" element={<HomePage />} />
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/tenant/success" element={<SuccessPage />} />
-      <Route path="/tenant/cancel" element={<CancelPage />} />
-      <Route
-        path="/tenant"
-        element={
-          <RequireAuth role="tenant">
-            <TenantDashboard />
-          </RequireAuth>
-        }
-      />
-      <Route
-        path="/admin"
-        element={
-          <RequireAuth role="admin">
-            <AdminDashboard />
-          </RequireAuth>
-        }
-      />
-      <Route path="/home" element={<Navigate to="/" replace />} />
-      <Route path="*" element={<NotFoundPage />} />
-    </Routes>
+    <>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/tenant/success" element={<SuccessPage />} />
+        <Route path="/tenant/cancel" element={<CancelPage />} />
+        <Route
+          path="/tenant"
+          element={
+            <RequireAuth role="tenant">
+              <TenantDashboard />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <RequireAuth role="admin">
+              <AdminDashboard />
+            </RequireAuth>
+          }
+        />
+        <Route path="/home" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+      <Analytics />
+    </>
   )
 }
 
